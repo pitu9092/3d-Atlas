@@ -160,14 +160,16 @@ export function buildExitTimeline(
   const d = (ms: number) => dur(ms, reducedMotion)
 
   // ── Fade + scale out the loader overlay ──────────────────────────
+  // NOTE: filter:blur() is intentionally OMITTED here. Applying blur to an
+  // element containing a WebGL canvas causes the compositor to stall/hang
+  // for many seconds on most GPUs, creating the "infinite loading" symptom.
   if (els.overlay) {
     tl.to(
       els.overlay,
       {
         opacity: 0,
-        scale: 1.04,
-        filter: 'blur(12px)',
-        duration: d(900),
+        scale: 1.03,
+        duration: d(800),
         ease: 'power3.inOut',
       },
       0,

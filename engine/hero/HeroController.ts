@@ -63,6 +63,19 @@ export class HeroController {
     logger.info('[HeroController] Mounted.')
   }
 
+  /**
+   * Forces the hero to the ready state.
+   * Used by HeroHooks when isLoadComplete is already true but hero missed the event.
+   */
+  public forceReady(): void {
+    if (this.state.isReady) return
+    this.state = { ...this.state, isReady: true }
+    this.callbacks.onStateChange(this.state)
+    globalEventBus.emit(HeroEvents.HERO_READY as string, undefined)
+    this.transition('entering')
+    logger.info('[HeroController] forceReady() called.')
+  }
+
   public markEntryComplete(): void {
     if (this.state.phase === 'entering') {
       this.transition('active')

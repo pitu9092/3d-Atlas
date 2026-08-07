@@ -2,72 +2,85 @@
 
 /**
  * @file components/scenes/scene01/Scene01Effects.tsx
- * @description Visual atmosphere effects layer for Scene 01.
+ * @description Visual atmosphere effects layer for Scene 01 (TR-01).
  *
- * Renders the cinematic atmosphere gradient overlay:
- *   - The glowing electric-blue band that simulates Earth's atmosphere
- *   - A radial gradient glow (representing the lit limb of the atmosphere)
- *   - Composited above the page via absolute positioning + additive blending
- *
- * This component is purely visual. All animation is driven by Scene01Manager
- * (GSAP ScrollTrigger) via a forwarded ref on the atmosphere element.
+ * Two GSAP-animated layers (per 09_BackgroundEvolution.md BG-02):
+ *   gradientElement — full 8-stop atmosphere gradient (bg layer)
+ *   atmosphereBand  — electric-blue radial limb glow (peak layer)
+ *   horizon line    — pure CSS decorative strip (no GSAP)
  */
 
 import { forwardRef } from 'react'
+
+import { ATMOSPHERE_GRADIENT } from '@/engine/scenes/Scene01Manager'
 
 import { SCENE01_COLORS } from './Scene01Timeline'
 
 export interface Scene01EffectsRefs {
   atmosphereBand: HTMLDivElement | null
+  gradientElement: HTMLDivElement | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Scene01EffectsProps {}
 
 export const Scene01Effects = forwardRef<Scene01EffectsRefs, Scene01EffectsProps>((_props, ref) => {
+  const setRef = (key: keyof Scene01EffectsRefs) => (el: HTMLDivElement | null) => {
+    if (ref && typeof ref !== 'function') {
+      if (!ref.current) {
+        ref.current = { atmosphereBand: null, gradientElement: null }
+      }
+      ref.current[key] = el
+    }
+  }
+
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] overflow-hidden">
-      {/*
-          Atmosphere Band:
-          A full-viewport overlay that GSAP will fade in/out (opacity: 0 → 1 → 0)
-          as the user scrolls through this section.
-          The gradient simulates the glowing blue band of Earth's atmosphere
-          as seen from low orbit.
-        */}
+      {/* Layer 1: Full-frame 8-stop atmosphere gradient (GSAP controls opacity) */}
       <div
-        className="absolute inset-0 will-change-transform"
-        ref={(_el) => {
-          if (ref && typeof ref !== 'function') {
-            ref.current = ref.current || { atmosphereBand: null }
-            ref.current.atmosphereBand = _el
-          }
-        }}
+        className="absolute inset-0"
+        ref={setRef('gradientElement')}
         style={{
-          background: `
-              radial-gradient(ellipse 120% 60% at 50% 100%,
-                ${SCENE01_COLORS.atmosphereBlue}cc 0%,
-                ${SCENE01_COLORS.atmosphereBlue}66 30%,
-                ${SCENE01_COLORS.atmosphereBlue}00 70%
-              )
-            `,
-          opacity: 0, // GSAP will animate this
+          background: `linear-gradient(to bottom, ${ATMOSPHERE_GRADIENT})`,
+          opacity: 0,
+          willChange: 'opacity',
         }}
       />
 
-      {/*
-          Horizon glow line: a thin bright line at the vertical midpoint
-          suggesting Earth's curved horizon. Fades with the atmosphere band.
-        */}
+      {/* Layer 2: Electric-blue radial atmosphere limb glow (GSAP controls opacity) */}
+      <div
+        className="absolute inset-0"
+        ref={setRef('atmosphereBand')}
+        style={{
+          background: `
+            radial-gradient(ellipse 140% 80% at 50% 110%,
+              ${SCENE01_COLORS.atmosphereBlue}dd 0%,
+              ${SCENE01_COLORS.atmosphereBlue}88 25%,
+              ${SCENE01_COLORS.atmosphereBlue}44 50%,
+              ${SCENE01_COLORS.atmosphereBlue}00 75%
+            )
+          `,
+          opacity: 0,
+          willChange: 'opacity',
+        }}
+      />
+
+      {/* Layer 3: Horizon glow line — decorative, pure CSS */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute right-0 left-0"
         style={{
-          // Positioned at the "horizon" — bottom 40% of the viewport
-          bottom: '35%',
-          height: '2px',
-          background: `linear-gradient(90deg, transparent 0%, ${SCENE01_COLORS.atmosphereBlue}ff 30%, #6ec6ffff 50%, ${SCENE01_COLORS.atmosphereBlue}ff 70%, transparent 100%)`,
-          filter: 'blur(3px)',
-          opacity: 'inherit', // inherits from parent GSAP-controlled element when nested, but here it's separate
+          bottom: '38%',
+          height: '1px',
+          background: `linear-gradient(90deg,
+            transparent 0%,
+            ${SCENE01_COLORS.atmosphereBlue}cc 20%,
+            #7ecfff 50%,
+            ${SCENE01_COLORS.atmosphereBlue}cc 80%,
+            transparent 100%
+          )`,
+          filter: 'blur(2px)',
+          boxShadow: `0 0 12px 4px ${SCENE01_COLORS.atmosphereBlue}66`,
         }}
       />
     </div>

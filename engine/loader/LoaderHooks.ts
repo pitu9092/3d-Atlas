@@ -36,9 +36,13 @@ export function useLoaderController() {
     })
   }, [])
 
-  // Mount the controller on component mount
+  // Mount the controller on component mount, then start simulated progress
+  // (since no real 3D assets are registered yet, we simulate a smooth fill
+  //  over MIN_DISPLAY_MS so the loader always reaches 100% and fires exit).
   useEffect(() => {
     controller.mount()
+    // Kick off progress immediately after mount
+    controller.simulateProgress()
 
     return () => {
       controller.dispose()

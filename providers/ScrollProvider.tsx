@@ -89,10 +89,23 @@ export function ScrollProvider({ children }: ScrollProviderProps) {
     const init = async (): Promise<() => void> => {
       const { createLenisInstance } = await import('@/lib/lenis')
       const { gsap, ScrollTrigger } = await import('@/lib/gsap')
+      const { globalEventBus } = await import('@/engine/events')
 
       const lenis = createLenisInstance()
       lenisRef.current = lenis
       setLenisInstance(lenis)
+
+      // ── Lock scroll until loader completes ──────────────────────────
+      // Start Lenis in stopped state so the user cannot scroll during loading.
+      lenis.stop()
+
+      // Unlock scroll when the loader emits 'loader:hidden'
+      const onLoaderHidden = () => {
+        lenis.start()
+        // Refresh ScrollTrigger after content is visible
+        ScrollTrigger.refresh()
+      }
+      globalEventBus.on('loader:hidden', onLoaderHidden)
 
       // ── Single RAF loop: GSAP ticker drives Lenis ─────────────────
       // From docs: gsap.ticker.add((t) => lenis.raf(t * 1000))
@@ -134,6 +147,7 @@ export function ScrollProvider({ children }: ScrollProviderProps) {
 
       // ── Return cleanup function ───────────────────────────────────
       return () => {
+        globalEventBus.off('loader:hidden', onLoaderHidden)
         gsap.ticker.remove(tickerCallback)
         document.removeEventListener('visibilitychange', handleVisibility)
         lenis.destroy()

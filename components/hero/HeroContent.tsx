@@ -21,8 +21,8 @@ export function HeroContent({ isReady, onEntryComplete }: HeroContentProps) {
   const { motionPreferences, isGSAPReady } = useAnimation()
   const { reducedMotion } = motionPreferences
 
-  const headlineRefs = useRef<HeroHeadlineRefs>({ lines: [] })
-  const subheadlineRefs = useRef<HeroSubheadlineRefs>({ eyebrow: null, body: null })
+  const headlineRefs = useRef<HeroHeadlineRefs>({ words: [] })
+  const subheadlineRefs = useRef<HeroSubheadlineRefs>({ eyebrow: null, bodyWords: [] })
   const ctaRefs = useRef<HeroCTARefs>({ buttons: [] })
 
   const playedRef = useRef(false)
@@ -35,8 +35,8 @@ export function HeroContent({ isReady, onEntryComplete }: HeroContentProps) {
       {
         globeContainer: null, // Globe is animated independently in HeroCanvas or CSS
         eyebrow: subheadlineRefs.current.eyebrow,
-        headlineLines: headlineRefs.current.lines,
-        body: subheadlineRefs.current.body,
+        headlineWords: headlineRefs.current.words,
+        bodyWords: subheadlineRefs.current.bodyWords,
         buttons: ctaRefs.current.buttons,
       },
       reducedMotion,

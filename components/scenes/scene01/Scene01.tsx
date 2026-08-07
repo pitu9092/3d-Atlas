@@ -42,7 +42,7 @@ export function Scene01() {
 
   // DOM refs wired to engine manager
   const sectionRef = useRef<HTMLElement>(null)
-  const effectsRefs = useRef<Scene01EffectsRefs>({ atmosphereBand: null })
+  const effectsRefs = useRef<Scene01EffectsRefs>({ atmosphereBand: null, gradientElement: null })
 
   // Controller (stable reference via useMemo — avoids ref.current access during render)
   const controller = useMemo(
@@ -65,6 +65,7 @@ export function Scene01() {
     // Register DOM refs with the engine manager
     scene01Manager.setTriggerElement(sectionRef.current)
     scene01Manager.setOverlayElement(effectsRefs.current.atmosphereBand)
+    scene01Manager.setGradientElement(effectsRefs.current.gradientElement)
 
     // Execute the scene lifecycle
     void (async () => {
@@ -94,16 +95,16 @@ export function Scene01() {
       ref={sectionRef}
       style={{
         // Height drives the scroll budget for this section.
-        // 50vh means the user has 50vh of scroll to drive the atmosphere animation.
+        // 60vh = 150vh → 210vh (per 01_MasterAnimationTimeline.md atmo-start → atmo-end)
         height: `${SCENE01_SCROLL_VH}vh`,
-        // Background gradient transitions from hero black → off-white
-        background: `linear-gradient(to bottom, ${SCENE01_COLORS.spaceBlack} 0%, ${SCENE01_COLORS.offWhite} 100%)`,
+        // Base is space-black — the GSAP overlays in Scene01Effects handle the gradient
+        backgroundColor: SCENE01_COLORS.spaceBlack,
       }}
     >
       {/* 3D Canvas slot (no-op for Scene 01) */}
       {/* Scene01Canvas is null, no render needed */}
 
-      {/* Atmosphere visual effects (the animated blue glow) */}
+      {/* Atmosphere visual effects (gradient + blue glow layers) */}
       <Scene01Effects ref={effectsRefs} />
 
       {/* DOM Overlay (empty for Scene 01, kept for architectural parity) */}

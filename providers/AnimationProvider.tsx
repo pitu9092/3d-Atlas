@@ -72,17 +72,38 @@ export function AnimationProvider({ children }: AnimationProviderProps) {
 
   // ── Initialize GSAP (import side-effect triggers registration) ────
   // GSAP plugins are registered in lib/gsap.ts.
-  // We mark GSAP as ready after the first client-side effect completes.
+  // CRITICAL: We mark GSAP as ready IMMEDIATELY after the import — this
+  // must NOT wait for Bootstrap.boot(), because the Loader UI needs GSAP
+  // to run its intro animation before any engine boot can complete.
+  // Bootstrap.boot() runs asynchronously in parallel.
   useEffect(() => {
-    // Dynamic import ensures GSAP only runs on client
-    import('@/lib/gsap')
-      .then(() => {
+    let cancelled = false
+
+    const bootstrap = async () => {
+      try {
+        // Dynamic import ensures everything runs client-side only.
+        // Mark GSAP ready as soon as the lib is imported — don't wait for engine.
+        await import('@/lib/gsap')
+        if (cancelled) return
+
         setIsGSAPReady(true)
-      })
-      .catch(() => {
-        // GSAP failed to load — animations will degrade gracefully
-        setIsGSAPReady(false)
-      })
+
+        // Boot the engine in the background (non-blocking for GSAP readiness)
+        const { Bootstrap } = await import('@/engine/runtime')
+        if (cancelled) return
+
+        await Bootstrap.boot()
+      } catch {
+        // Engine boot failed — GSAP animations degrade gracefully.
+        // isGSAPReady stays true since GSAP itself loaded fine.
+      }
+    }
+
+    void bootstrap()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // ── Actions ───────────────────────────────────────────────────────

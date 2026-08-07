@@ -18,8 +18,8 @@ import gsap from 'gsap'
 export interface HeroEntryElements {
   globeContainer: Element | null
   eyebrow: Element | null
-  headlineLines: Element[]
-  body: Element | null
+  headlineWords: Element[]
+  bodyWords: Element[]
   buttons: Element[]
 }
 
@@ -33,46 +33,62 @@ export function buildHeroEntryTimeline(
   reducedMotion: boolean,
   onComplete: () => void,
 ): gsap.core.Timeline {
-  const tl = gsap.timeline({ defaults: { ease: 'power2.out' }, onComplete })
+  const tl = gsap.timeline({ defaults: { ease: 'expo.out' }, onComplete })
   const d = (ms: number) => dur(ms, reducedMotion)
 
-  // t=0.0: Globe canvas
+  // t=0.0: Globe canvas (handled via CSS transition mostly, but we can ensure it's visible if passed)
   if (els.globeContainer) {
     gsap.set(els.globeContainer, { opacity: 0 })
-    tl.to(els.globeContainer, { opacity: 1, duration: d(800) }, 0)
+    tl.to(els.globeContainer, { opacity: 1, duration: d(1200) }, 0)
   }
 
-  // t=0.3: Eyebrow
+  // t=0.2: Eyebrow
   if (els.eyebrow) {
-    tl.addLabel('eyebrow', d(300))
-    gsap.set(els.eyebrow, { opacity: 0, y: 8 })
-    tl.to(els.eyebrow, { opacity: 1, y: 0, duration: d(500) }, 'eyebrow')
+    tl.addLabel('eyebrow', d(200))
+    gsap.set(els.eyebrow, { opacity: 0, y: 15 })
+    tl.to(els.eyebrow, { opacity: 1, y: 0, duration: d(800), ease: 'power3.out' }, 'eyebrow')
   }
 
-  // t=0.4: Headline
-  tl.addLabel('headline', d(400))
-  if (els.headlineLines.length > 0) {
-    // We assume the headline elements have overflow: hidden and inner elements doing the yPercent
-    els.headlineLines.forEach((line, index) => {
-      gsap.set(line, { yPercent: 100 })
-      // staggered by 0.12s
-      tl.to(line, { yPercent: 0, duration: d(900), ease: 'power4.out' }, d(400) + d(120 * index))
-    })
+  // t=0.3: Headline Words (Staggered)
+  tl.addLabel('headline', d(300))
+  if (els.headlineWords.length > 0) {
+    gsap.set(els.headlineWords, { yPercent: 110, rotateZ: 2 })
+    tl.to(
+      els.headlineWords,
+      {
+        yPercent: 0,
+        rotateZ: 0,
+        duration: d(1200),
+        ease: 'power4.out',
+        stagger: d(50),
+      },
+      'headline',
+    )
   }
 
-  // t=0.75: Body copy
-  if (els.body) {
-    tl.addLabel('body', d(750))
-    gsap.set(els.body, { opacity: 0, y: 16 })
-    tl.to(els.body, { opacity: 1, y: 0, duration: d(600) }, 'body')
+  // t=0.7: Body copy Words (Staggered)
+  tl.addLabel('body', d(700))
+  if (els.bodyWords.length > 0) {
+    gsap.set(els.bodyWords, { opacity: 0, y: 15 })
+    tl.to(
+      els.bodyWords,
+      {
+        opacity: 1,
+        y: 0,
+        duration: d(800),
+        ease: 'power3.out',
+        stagger: d(15),
+      },
+      'body',
+    )
   }
 
   // t=0.9: Buttons
   tl.addLabel('cta', d(900))
   if (els.buttons.length > 0) {
     els.buttons.forEach((btn, index) => {
-      gsap.set(btn, { opacity: 0, y: 12 })
-      tl.to(btn, { opacity: 1, y: 0, duration: d(500) }, d(900) + d(100 * index))
+      gsap.set(btn, { opacity: 0, y: 20 })
+      tl.to(btn, { opacity: 1, y: 0, duration: d(800), ease: 'expo.out' }, d(900) + d(150 * index))
     })
   }
 

@@ -28,19 +28,14 @@ export function useHeroController() {
     }
   }, [controller])
 
-  // If we miss the event because the component mounted late, force ready
+  // Fallback: if the hero component mounted AFTER loader:hidden was emitted
+  // (race condition — event already fired), force the ready state now.
   useEffect(() => {
     if (isLoadComplete && !state.isReady) {
-      // Small timeout to allow the loader exit animation to fully flush if needed
+      // Small delay to allow GSAP to settle after the loader exit animation
       const t = setTimeout(() => {
-        // Mock the loader hiding if it's already done
-        const currentState = controller.getState()
-        if (!currentState.isReady) {
-          // We might need to manually trigger the readiness in controller
-          // Wait, globalEventBus might have fired before we mounted.
-          // To be safe, we can trigger the phase if loadComplete is true.
-        }
-      }, 100)
+        controller.forceReady()
+      }, 150)
       return () => clearTimeout(t)
     }
   }, [isLoadComplete, state.isReady, controller])

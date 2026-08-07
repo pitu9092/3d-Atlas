@@ -29,10 +29,13 @@ import {
 // ─── Configuration ────────────────────────────────────────────────────────────
 
 /** Minimum time the loader is visible, even if loading completes instantly. */
-const MIN_DISPLAY_MS = 2500
+const MIN_DISPLAY_MS = 3000
 
 /** How long to hold at 100% before starting the exit animation. */
-const COMPLETE_HOLD_MS = 600
+const COMPLETE_HOLD_MS = 400
+
+/** Hard-cap: if loader has not resolved after this many ms, force complete. */
+const MAX_DISPLAY_MS = 5000
 
 // ─── Callbacks ────────────────────────────────────────────────────────────────
 
@@ -50,6 +53,7 @@ export class LoaderController {
   private mountTime = 0
   private cleanupFns: Array<() => void> = []
   private completeTimer: ReturnType<typeof setTimeout> | null = null
+  private forceCompleteTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(callbacks: LoaderControllerCallbacks) {
     this.callbacks = callbacks
@@ -88,6 +92,13 @@ export class LoaderController {
       () => globalEventBus.off('asset:load_progress', onAssetProgress),
     )
 
+    // Hard-cap safety net: if nothing resolves in MAX_DISPLAY_MS, force complete.
+    // This prevents an infinite loading hang if engine boot fails silently.
+    this.forceCompleteTimer = setTimeout(() => {
+      logger.warn('[LoaderController] Hard-cap timer fired — forcing load complete.')
+      this.handleLoadComplete()
+    }, MAX_DISPLAY_MS)
+
     globalEventBus.emit(LoaderEvents.LOADER_MOUNT as string, undefined)
     logger.info('[LoaderController] Mounted.')
   }
@@ -97,11 +108,21 @@ export class LoaderController {
    * Simulates a progress fill over the minimum duration.
    */
   public simulateProgress(): void {
-    const startTime = Date.now()
+    // Delay start by 400ms to ensure the loader intro animation has rendered
+    // before we start updating progress (prevents progress reaching 100% before
+    // the loader UI is even visible, which caused the exit to fire too early).
+    const INTRO_SETTLE_DELAY = 400
+    const startTime = Date.now() + INTRO_SETTLE_DELAY
     const totalDuration = MIN_DISPLAY_MS
 
     const tick = () => {
-      const elapsed = Date.now() - startTime
+      const now = Date.now()
+      if (now < startTime) {
+        requestAnimationFrame(tick)
+        return
+      }
+
+      const elapsed = now - startTime
       const progress = Math.min(elapsed / totalDuration, 1)
 
       this.updateProgress(progress, 'simulated')
@@ -138,6 +159,11 @@ export class LoaderController {
       this.completeTimer = null
     }
 
+    if (this.forceCompleteTimer !== null) {
+      clearTimeout(this.forceCompleteTimer)
+      this.forceCompleteTimer = null
+    }
+
     logger.info('[LoaderController] Disposed.')
   }
 
@@ -168,6 +194,12 @@ export class LoaderController {
 
   private handleLoadComplete(): void {
     if (this.state.phase !== 'loading') return
+
+    // Clear the hard-cap timer since we completed naturally
+    if (this.forceCompleteTimer !== null) {
+      clearTimeout(this.forceCompleteTimer)
+      this.forceCompleteTimer = null
+    }
 
     // Snap progress to 100%
     this.state = { ...this.state, progress: 1 }

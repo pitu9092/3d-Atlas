@@ -1,17 +1,21 @@
 /**
  * @file engine/scenes/Scene01Manager.ts
- * @description Engine lifecycle manager for Scene 01 — Atmosphere Transition.
+ * @description Engine lifecycle manager for Scene 01 — Atmosphere Transition (TR-01).
  *
- * Scene 01 is the cinematic bridge between the Hero Globe section and the
- * Editorial Brand Statement. It lives at scroll range 150vh–200vh.
- *
- * Per the 02_SceneMap.md and 03_GSAPBlueprint.md:
- *   - Background transitions from deep black → electric blue band → off-white
- *   - Driven by GSAP ScrollTrigger with scrub
+ * Per 10_TransitionBlueprint.md (TR-01) and 09_BackgroundEvolution.md (BG-02):
+ *   - Background transitions from #080808 → multi-stop atmosphere gradient → #F5F4F0
+ *   - Blue atmosphere band peaks at ~50% of this section's scroll
+ *   - Driven by GSAP ScrollTrigger with scrub: 1
  *   - No 3D canvas — purely a DOM/CSS transition layer
- *   - The atmosphere overlay div is the key visual element
  *
- * This class implements SceneLifecycle and can be registered with SceneManager.
+ * Gradient stops (09_BackgroundEvolution.md BG-02):
+ *   #080808 0% | #0a1040 15% | #0f2a80 30% | #1a5ec8 45%
+ *   #4a9ae0 58% | #8ac8f0 70% | #c8e8f8 80% | #F5F4F0 100%
+ *
+ * Animation phases (08_TransitionFrames.md TR-01):
+ *   0→0.4  : Black → Electric blue atmosphere
+ *   0.4→0.7: Blue at peak (horizon visible)
+ *   0.7→1.0: Blue fades, off-white resolves
  */
 
 import { logger } from '@/lib/core'
@@ -20,71 +24,64 @@ import { gsap, ScrollTrigger } from '@/lib/gsap'
 import { globalEventBus } from '../events'
 import { type SceneLifecycle } from '../scene/SceneLifecycle'
 
-// ─── Scene Configuration (sourced from reference docs, not magic numbers) ─────
+// ─── Configuration ────────────────────────────────────────────────────────────
 
-/** CSS custom property names used by the Scene 01 gradient overlay. */
 export const SCENE01_CSS_VARS = {
-  /** The atmosphere midband color, interpolated from black → blue → transparent */
   atmoBandOpacity: '--scene01-atmo-opacity',
-  /** The final off-white background reveal progress */
   lightProgress: '--scene01-light-progress',
 } as const
 
+/**
+ * Reference-exact atmosphere gradient (09_BackgroundEvolution.md BG-02).
+ * Used by the React component to render the gradient overlay.
+ */
+export const ATMOSPHERE_GRADIENT = [
+  '#080808 0%',
+  '#0a1040 15%',
+  '#0f2a80 30%',
+  '#1a5ec8 45%',
+  '#4a9ae0 58%',
+  '#8ac8f0 70%',
+  '#c8e8f8 80%',
+  '#F5F4F0 100%',
+].join(', ')
+
+/** Selector for the Hero globe canvas — faded out during atmosphere transition. */
+const HERO_CANVAS_SELECTOR = '[data-hero-canvas]'
+
 export class Scene01Manager implements SceneLifecycle {
-  /** The sentinel trigger element for ScrollTrigger (must be set before load). */
   private triggerElement: HTMLElement | null = null
-
-  /** The atmosphere overlay DOM element (set by React component). */
   private overlayElement: HTMLElement | null = null
-
-  /** The GSAP ScrollTrigger instance for the atmosphere timeline. */
+  private gradientElement: HTMLElement | null = null
   private scrollTrigger: ScrollTrigger | null = null
-
-  /** The GSAP timeline controlling atmosphere color transition. */
   private timeline: gsap.core.Timeline | null = null
+  private originalBodyBg = ''
 
   // ─── SceneLifecycle ──────────────────────────────────────────────────────────
 
-  /**
-   * Called by SceneManager before mount.
-   * Scene 01 has no async assets to load; resolves immediately.
-   */
   public async load(): Promise<void> {
     logger.info('[Scene01Manager] load()')
-    // No async assets for this scene
     return Promise.resolve()
   }
 
-  /**
-   * Called by SceneManager to mount scene DOM/logic.
-   * The React component sets trigger/overlay elements before this runs.
-   */
   public mount(): void {
     logger.info('[Scene01Manager] mount()')
+    // Pin body background to space-black when this scene mounts
+    this.originalBodyBg = document.body.style.backgroundColor
+    document.body.style.backgroundColor = '#080808'
   }
 
-  /**
-   * Per-frame tick — Scene 01 is scroll-driven via ScrollTrigger,
-   * so the tick is a no-op (GSAP manages updates via its own ticker).
-   */
   public tick(_time: number, _delta: number): void {
-    // ScrollTrigger handles all frame updates for this scene
+    // ScrollTrigger handles all frame updates
   }
 
-  /**
-   * Animates scene into view.
-   * Builds the scroll-driven atmosphere timeline via ScrollTrigger.
-   */
   public async enter(): Promise<void> {
-    logger.info('[Scene01Manager] enter() — building atmosphere timeline')
+    logger.info('[Scene01Manager] enter()')
     this.buildScrollTimeline()
     globalEventBus.emit('scene01:enter', undefined)
     return Promise.resolve()
   }
 
-  /**
-   * Animates scene out. Kills the scroll timeline.
-   */
   public async exit(): Promise<void> {
     logger.info('[Scene01Manager] exit()')
     globalEventBus.emit('scene01:exit', undefined)
@@ -92,36 +89,37 @@ export class Scene01Manager implements SceneLifecycle {
     return Promise.resolve()
   }
 
-  /**
-   * Fully cleans up all resources, timelines, and event listeners.
-   */
   public unmount(): void {
     logger.info('[Scene01Manager] unmount()')
     this.destroyScrollTimeline()
+    document.body.style.backgroundColor = this.originalBodyBg
     this.triggerElement = null
     this.overlayElement = null
+    this.gradientElement = null
   }
 
-  // ─── Public API (called by React component) ───────────────────────────────────
+  // ─── Public API ───────────────────────────────────────────────────────────────
 
-  /**
-   * Registers the trigger element used by ScrollTrigger.
-   * Must be called by the React component during mount (useEffect).
-   */
   public setTriggerElement(el: HTMLElement | null): void {
     this.triggerElement = el
   }
 
-  /**
-   * Registers the atmosphere overlay element targeted by the GSAP tween.
-   */
   public setOverlayElement(el: HTMLElement | null): void {
     this.overlayElement = el
   }
 
+  public setGradientElement(el: HTMLElement | null): void {
+    this.gradientElement = el
+  }
+
   /**
-   * Lazily builds (or rebuilds) the scroll-driven atmosphere timeline.
-   * Safe to call multiple times — kills previous instance first.
+   * Builds the full reference-accurate scroll-driven atmosphere timeline.
+   *
+   * Phase 1 (0→0.4):   #080808 → electric blue atmosphere appears
+   * Phase 2 (0.4→0.7): Blue held at peak (horizon visible)
+   * Phase 3 (0.7→1.0): Blue fades, #F5F4F0 editorial resolves
+   *
+   * Parallel: body background color, hero canvas fade
    */
   public buildScrollTimeline(reducedMotion = false): void {
     this.destroyScrollTimeline()
@@ -131,9 +129,9 @@ export class Scene01Manager implements SceneLifecycle {
       return
     }
 
-    const scrub = reducedMotion ? false : 1
+    const scrub = reducedMotion ? 0 : 1
+    const proxy = { t: 0 }
 
-    // ── Main atmosphere gradient timeline ──────────────────────────────────
     this.timeline = gsap.timeline({
       scrollTrigger: {
         trigger: this.triggerElement,
@@ -144,30 +142,94 @@ export class Scene01Manager implements SceneLifecycle {
         onUpdate: (self) => {
           globalEventBus.emit('scene01:progress', { progress: self.progress })
         },
+        onLeave: () => {
+          document.body.style.backgroundColor = '#F5F4F0'
+        },
+        onLeaveBack: () => {
+          document.body.style.backgroundColor = '#080808'
+        },
       },
     })
 
-    // Phase 1 (0→0.4 progress): Black → Electric blue band
-    // Phase 2 (0.4→0.7 progress): Blue band peaks
-    // Phase 3 (0.7→1.0 progress): Blue → off-white reveal
+    // ── Atmosphere blue glow overlay ──────────────────────────────────────
     if (this.overlayElement) {
       this.timeline
         .addLabel('atmo-start', 0)
         .fromTo(
           this.overlayElement,
           { opacity: 0 },
-          { opacity: 1, duration: 0.4, ease: 'none' },
+          { opacity: 1, duration: 0.4, ease: 'power2.in' },
           'atmo-start',
         )
         .addLabel('atmo-peak', 0.4)
-        .to(this.overlayElement, { opacity: 0, duration: 0.6, ease: 'power2.inOut' }, 'atmo-peak')
+        .addLabel('atmo-end', 0.7)
+        .to(this.overlayElement, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 'atmo-end')
+    }
+
+    // ── Full-frame atmosphere gradient (the 8-stop gradient) ──────────────
+    if (this.gradientElement) {
+      this.timeline
+        .fromTo(
+          this.gradientElement,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.35, ease: 'none' },
+          0,
+        )
+        .to(this.gradientElement, { opacity: 0, duration: 0.45, ease: 'power3.out' }, 0.55)
+    }
+
+    // ── Body background: #080808 → intermediate → #F5F4F0 ────────────────
+    // Per BG-01→BG-03 in 09_BackgroundEvolution.md
+    this.timeline.fromTo(
+      proxy,
+      { t: 0 },
+      {
+        t: 1,
+        duration: 1,
+        ease: 'none',
+        onUpdate: () => {
+          const t = proxy.t
+          let r: number, g: number, b: number
+          if (t < 0.4) {
+            const f = t / 0.4
+            r = Math.round(8 + (15 - 8) * f)
+            g = Math.round(8 + (42 - 8) * f)
+            b = Math.round(8 + (128 - 8) * f)
+          } else if (t < 0.7) {
+            const f = (t - 0.4) / 0.3
+            r = Math.round(15 + (74 - 15) * f)
+            g = Math.round(42 + (154 - 42) * f)
+            b = Math.round(128 + (224 - 128) * f)
+          } else {
+            const f = (t - 0.7) / 0.3
+            r = Math.round(74 + (245 - 74) * f)
+            g = Math.round(154 + (244 - 154) * f)
+            b = Math.round(224 + (240 - 224) * f)
+          }
+          document.body.style.backgroundColor = `rgb(${r},${g},${b})`
+        },
+      },
+      0,
+    )
+
+    // ── Hero globe canvas fade-out ─────────────────────────────────────────
+    // Per TR-01: globe fades as atmosphere transition begins
+    if (typeof document !== 'undefined') {
+      const heroCanvas = document.querySelector<HTMLElement>(HERO_CANVAS_SELECTOR)
+      if (heroCanvas) {
+        this.timeline.fromTo(
+          heroCanvas,
+          { opacity: 1 },
+          { opacity: 0, duration: 0.6, ease: 'power2.inOut' },
+          0.05,
+        )
+      }
     }
 
     this.scrollTrigger = ScrollTrigger.getById('scene01-atmosphere') ?? null
     logger.info('[Scene01Manager] Scroll timeline built.')
   }
 
-  /** Kills and nullifies the current scroll timeline. */
   private destroyScrollTimeline(): void {
     this.scrollTrigger?.kill()
     this.scrollTrigger = null
