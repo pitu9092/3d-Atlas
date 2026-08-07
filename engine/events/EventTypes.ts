@@ -45,6 +45,14 @@ export interface EventPayloadMap {
   'asset:cache_hit': { id: string }
   'asset:cache_evict': { id: string; reason: 'lru' | 'manual' | 'memory_pressure' }
   'asset:queue_drain': { totalLoaded: number; totalErrors: number }
+
+  // Cinematic Loader (Phase 7)
+  'loader:mount': void
+  'loader:start': void
+  'loader:progress': void
+  'loader:complete': void
+  'loader:exit': void
+  'loader:hidden': void
 }
 
 export type EventCallback<T extends keyof EventPayloadMap = string> = (

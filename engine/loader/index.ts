@@ -10,6 +10,11 @@
  */
 
 export * from './AssetLoader'
+export * from './LoaderController'
+export * from './LoaderEvents'
+export * from './LoaderHooks'
+export * from './LoaderState'
+export * from './LoaderTimeline'
 export * from './LoadingManager'
 export * from './LoadingState'
 export * from './Preloader'
