@@ -53,6 +53,15 @@ export interface EventPayloadMap {
   'loader:complete': void
   'loader:exit': void
   'loader:hidden': void
+
+  // Hero Scene (Phase 8)
+  'hero:ready': void
+  'hero:scroll': { progress: number }
+
+  // Scene 01 — Atmosphere Transition (Phase 9)
+  'scene01:enter': void
+  'scene01:exit': void
+  'scene01:progress': { progress: number }
 }
 
 export type EventCallback<T extends keyof EventPayloadMap = string> = (

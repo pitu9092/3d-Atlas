@@ -4,13 +4,14 @@
  * Full implementation begins in Phase 2 (Layout).
  */
 
+import { Hero } from '@/components/hero'
 import { Loader } from '@/components/loader'
 
 export default function Home() {
   return (
-    <main>
+    <main className="relative w-full">
       <Loader />
-      {/* Phase 2: Hero section */}
+      <Hero />
       {/* Phase 2: Feature sections */}
       {/* Phase 2: Footer */}
     </main>
