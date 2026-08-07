@@ -1,9 +1,13 @@
 /**
  * @file engine/scene/SceneManager.ts
- * @description Architecture shell for scene orchestration.
+ * @description Scene orchestration manager.
  *
- * Purpose: Manages scene lifecycles, mounting, unmounting, and transitions.
- * Responsibilities: State tracking, coordinating transitions via EventBus.
+ * Purpose: Manages scene lifecycles, mounting, transitions, and per-frame ticking.
+ * Responsibilities:
+ *   - Scene registry lookup
+ *   - Transition orchestration with load / mount / enter / exit / unmount phases
+ *   - Propagates pause, resume, resize to the active scene
+ *   - Emits global EventBus events for scene lifecycle changes
  */
 
 import { logger } from '@/lib/core'
@@ -30,60 +34,90 @@ export class SceneManager implements EngineManager, Tickable {
     this.registry = new SceneRegistry()
   }
 
+  // ─── Lifecycle ─────────────────────────────────────────────────────────────
+
   public init(): void {
     if (this.state !== 'uninitialized') return
     this.state = 'initializing'
-
-    // SceneManager relies heavily on other systems (Loader, Animation)
-    // which will be injected or coordinated at the top Engine level.
-
     this.state = 'ready'
     logger.info('SceneManager initialized')
   }
 
-  /**
-   * Called by the global render loop to tick the active scene.
-   */
-  public tick(time: number, delta: number, _frame: number): void {
-    if (this.state !== 'running' || !this.context.currentScene) return
+  public update(delta: number): void {
+    this.tick(performance.now(), delta, 0)
+  }
 
-    const sceneInstance = this.registry.get(this.context.currentScene.id)
-    if (sceneInstance && this.context.currentScene.phase === 'active') {
-      sceneInstance.tick(time, delta)
+  public pause(): void {
+    if (this.state === 'paused') return
+    this.state = 'paused'
+  }
+
+  public resume(): void {
+    if (this.state !== 'paused') return
+    this.state = 'running'
+  }
+
+  public resize(width: number, height: number, pixelRatio: number): void {
+    // Forward resize to active scene if it exposes the method
+    if (this.context.currentScene) {
+      const instance = this.registry.get(this.context.currentScene.id)
+      if (instance && 'resize' in instance && typeof instance.resize === 'function') {
+        ;(instance as { resize: (w: number, h: number, dpr: number) => void }).resize(
+          width,
+          height,
+          pixelRatio,
+        )
+      }
     }
   }
 
+  // ─── Tickable ─────────────────────────────────────────────────────────────
+
+  public tick(time: number, delta: number, _frame: number): void {
+    if (this.state !== 'running' || !this.context.currentScene) return
+
+    const instance = this.registry.get(this.context.currentScene.id)
+    if (instance && this.context.currentScene.phase === 'active') {
+      instance.tick(time, delta)
+    }
+  }
+
+  // ─── Transitions ──────────────────────────────────────────────────────────
+
   /**
-   * Requests a transition to a new scene.
+   * Transitions to a registered scene.
+   * Orchestrates: load → mount → (exit current) → enter → active.
    */
   public async transitionTo(sceneId: string): Promise<void> {
     if (this.context.isTransitioning) {
-      logger.warn('Transition already in progress. Ignoring request.')
+      logger.warn('[SceneManager] Transition already in progress. Ignoring request.')
       return
     }
 
     if (!this.registry.has(sceneId)) {
-      logger.error(`Cannot transition to unknown scene: ${sceneId}`)
+      logger.error(`[SceneManager] Cannot transition to unknown scene: '${sceneId}'`)
       return
     }
 
     this.context.isTransitioning = true
     this.context.nextScene = this.createSceneState(sceneId, 'loading')
 
-    const currentId = this.context.currentScene?.id || 'none'
+    const currentId = this.context.currentScene?.id ?? 'none'
     globalEventBus.emit('scene:transition_start', { from: currentId, to: sceneId })
 
     try {
       const nextInstance = this.registry.get(sceneId)!
 
-      // 1. Load Next Scene
+      // 1. Load
+      globalEventBus.emit('scene:load_start', { sceneId })
       await nextInstance.load()
       this.context.nextScene.phase = 'ready'
+      globalEventBus.emit('scene:load_complete', { sceneId })
 
-      // 2. Mount Next Scene (usually invisible at first)
+      // 2. Mount (invisible)
       nextInstance.mount()
 
-      // 3. Exit Current Scene
+      // 3. Exit current
       if (this.context.currentScene) {
         this.context.currentScene.phase = 'exiting'
         const currentInstance = this.registry.get(this.context.currentScene.id)
@@ -94,36 +128,52 @@ export class SceneManager implements EngineManager, Tickable {
         this.context.previousScene = this.context.currentScene
       }
 
-      // 4. Enter Next Scene
+      // 4. Enter next
       this.context.currentScene = this.context.nextScene
       this.context.currentScene.phase = 'entering'
       this.context.nextScene = null
 
       await nextInstance.enter()
       this.context.currentScene.phase = 'active'
+      this.state = 'running'
 
       globalEventBus.emit('scene:transition_complete', { current: sceneId })
+      logger.info(`[SceneManager] Transitioned to scene: '${sceneId}'`)
     } catch (error) {
-      logger.error(`Transition to ${sceneId} failed`, error)
-      // Transition error recovery strategy goes here
+      logger.error(`[SceneManager] Transition to '${sceneId}' failed`, error)
+      // Reset next scene pointer on failure
+      this.context.nextScene = null
     } finally {
       this.context.isTransitioning = false
     }
   }
 
-  private createSceneState(id: string, phase: ScenePhase): SceneState {
-    return { id, phase, progress: 0 }
-  }
+  // ─── Accessors ────────────────────────────────────────────────────────────
 
   public getContext(): SceneManagerContext {
     return { ...this.context }
   }
+
+  // ─── Dispose ──────────────────────────────────────────────────────────────
 
   public dispose(): void {
     if (this.context.currentScene) {
       const instance = this.registry.get(this.context.currentScene.id)
       instance?.unmount()
     }
+    this.context = {
+      currentScene: null,
+      nextScene: null,
+      previousScene: null,
+      isTransitioning: false,
+    }
     this.state = 'destroyed'
+    logger.info('[SceneManager] Disposed')
+  }
+
+  // ─── Internal ─────────────────────────────────────────────────────────────
+
+  private createSceneState(id: string, phase: ScenePhase): SceneState {
+    return { id, phase, progress: 0 }
   }
 }

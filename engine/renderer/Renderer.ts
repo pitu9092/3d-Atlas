@@ -1,9 +1,11 @@
 /**
  * @file engine/renderer/Renderer.ts
- * @description Architecture shell for the WebGL Rendering system.
+ * @description WebGL Rendering system built on Three.js.
  *
- * Purpose: Centralizes Three.js WebGLRenderer initialization, post-processing, and render passes.
- * Responsibilities: WebGL initialization, applying threeConfig, managing render loops.
+ * Purpose: Centralizes Three.js WebGLRenderer initialization, configuration,
+ * and lifecycle. In the R3F path, the renderer is managed by CanvasRoot/
+ * RendererManager — this class provides the raw Three.js fallback path and
+ * the shared resize/tick contract.
  */
 
 import * as THREE from 'three'
@@ -11,6 +13,7 @@ import * as THREE from 'three'
 import { threeConfig } from '@/config/three'
 import { logger } from '@/lib/core'
 
+import { globalEventBus } from '../events'
 import {
   type EngineManager,
   type LifecycleState,
@@ -29,7 +32,6 @@ export class Renderer implements EngineManager, Tickable, Resizable {
   public resizeManager: ResizeManager
   public loop: RenderLoop
 
-  // WebGLRenderer instance placeholder
   private gl: THREE.WebGLRenderer | null = null
 
   constructor() {
@@ -42,21 +44,42 @@ export class Renderer implements EngineManager, Tickable, Resizable {
     if (this.state !== 'uninitialized') return
     this.state = 'initializing'
 
+    this.resizeManager.init()
+
     const canvas = this.canvasManager.getCanvas()
     if (canvas) {
       this.gl = new THREE.WebGLRenderer({
         canvas,
         alpha: threeConfig.canvas.gl.alpha,
         antialias: threeConfig.canvas.gl.antialias,
-        powerPreference: threeConfig.canvas.gl.powerPreference,
+        powerPreference: threeConfig.canvas.gl.powerPreference as WebGLPowerPreference,
       })
 
       this.gl.outputColorSpace = THREE.SRGBColorSpace
       this.gl.toneMapping = THREE.ACESFilmicToneMapping
+      this.gl.shadowMap.enabled = threeConfig.shadows.enabled
+      this.gl.shadowMap.type = THREE.PCFSoftShadowMap
     }
+
+    // Subscribe to resize events so renderer stays in sync
+    globalEventBus.on('window:resize', ({ width, height, pixelRatio }) => {
+      this.resize(width, height, pixelRatio)
+    })
 
     logger.info('Renderer initialized with THREE.WebGLRenderer')
     this.state = 'ready'
+  }
+
+  public update(_delta: number): void {
+    // Rendering is driven by scene manager via render()
+  }
+
+  public pause(): void {
+    this.loop.pause()
+  }
+
+  public resume(): void {
+    this.loop.resume()
   }
 
   public resize(width: number, height: number, pixelRatio: number): void {
@@ -67,20 +90,25 @@ export class Renderer implements EngineManager, Tickable, Resizable {
   }
 
   public tick(_time: number, _delta: number, _frame: number): void {
-    if (this.state !== 'running' || !this.gl) return
-
     // Called externally by SceneManager or RenderLoop when ready to render
   }
 
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
-    if (this.state !== 'running' || !this.gl) return
+    if (!this.gl) return
     this.gl.render(scene, camera)
+  }
+
+  /** Expose the raw WebGLRenderer (e.g., for post-processing setup). */
+  public getGL(): THREE.WebGLRenderer | null {
+    return this.gl
   }
 
   public dispose(): void {
     this.loop.dispose()
     this.resizeManager.dispose()
     this.canvasManager.dispose()
+
+    globalEventBus.clear('window:resize')
 
     if (this.gl) {
       this.gl.dispose()

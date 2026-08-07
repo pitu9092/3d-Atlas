@@ -1,17 +1,22 @@
 /**
  * @file engine/scroll/ScrollManager.ts
- * @description Architecture shell for the smooth scrolling system.
+ * @description Smooth scroll engine built on Lenis.
  *
- * Purpose: Manages global scroll state and coordinates Lenis integration.
- * Responsibilities: Tracking scroll position, exposing subscription methods,
- * emitting global scroll events.
+ * Purpose: Manages global scroll state and coordinates Lenis + GSAP integration.
+ * Responsibilities:
+ *   - Single Lenis instance driven by GSAP ticker
+ *   - Exposing scroll state (position, velocity, direction, progress)
+ *   - Subscription system for high-frequency scroll callbacks
+ *   - Pause / resume (lenis.stop / lenis.start)
+ *   - Resize refresh (ScrollTrigger.refresh)
+ *   - Tick-safe cleanup on dispose
  */
 
 import Lenis from 'lenis'
 
 import { lenisConfig } from '@/config/lenis'
 import { logger } from '@/lib/core'
-import { gsap } from '@/lib/gsap'
+import { gsap, ScrollTrigger } from '@/lib/gsap'
 
 import { globalEventBus } from '../events'
 import { type EngineManager, type LifecycleState, type Tickable } from '../shared/EngineTypes'
@@ -31,9 +36,12 @@ export class ScrollManager implements EngineManager, Tickable, ScrollObservable 
     isScrolling: false,
   }
 
+  /** High-frequency per-scroll-update subscribers. */
   private subscribers: Set<ScrollCallback> = new Set()
 
   private _lenisInstance: Lenis | null = null
+
+  // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
   public init(): void {
     if (this.state !== 'uninitialized') return
@@ -47,70 +55,106 @@ export class ScrollManager implements EngineManager, Tickable, ScrollObservable 
       infinite: lenisConfig.infinite,
     })
 
+    // ── Scroll event handler ───────────────────────────────────────────────
     this._lenisInstance.on('scroll', (e: Lenis) => {
       this.updateState({
         scrollY: e.scroll,
         velocity: e.velocity,
-        direction: e.direction,
+        direction: e.direction as 1 | -1 | 0,
         progress: e.progress,
         isScrolling: e.velocity !== 0,
       })
     })
 
-    // Bind to GSAP Ticker to keep animations and scroll perfectly synced
+    // ── GSAP Ticker synchronisation ───────────────────────────────────────
+    // Using GSAP's ticker as the single RAF loop.
+    // lagSmoothing(0) ensures Lenis never gets huge time jumps.
     if (lenisConfig.syncStrategy === 'gsap-ticker') {
       gsap.ticker.add(this.onGsapTick)
+      gsap.ticker.lagSmoothing(0)
     }
 
-    logger.info('ScrollManager initialized with Lenis')
+    // ── ScrollTrigger integration ─────────────────────────────────────────
+    this._lenisInstance.on('scroll', ScrollTrigger.update)
 
+    logger.info('ScrollManager initialized with Lenis + GSAP ticker')
     this.state = 'running'
   }
 
-  private onGsapTick = (time: number, _deltaTime: number, _frame: number): void => {
-    if (this.state === 'running' && this._lenisInstance) {
-      // Lenis expects ms time
-      this._lenisInstance.raf(time * 1000)
+  public update(_delta: number): void {
+    // Lenis drives itself via the GSAP ticker callback.
+    // Notify local subscribers when scrolling (high frequency).
+    if (this.scrollState.isScrolling) {
+      this.subscribers.forEach((cb) => cb(this.scrollState))
     }
   }
 
   /**
-   * Called by the global render loop to drive scroll physics if not using GSAP ticker.
+   * Pauses smooth scroll (Lenis stops processing input).
    */
-  public tick(_time: number): void {
+  public pause(): void {
+    if (this.state !== 'running') return
+    this._lenisInstance?.stop()
+    this.state = 'paused'
+    logger.info('[ScrollManager] Paused')
+  }
+
+  /**
+   * Resumes smooth scroll.
+   */
+  public resume(): void {
+    if (this.state !== 'paused') return
+    this._lenisInstance?.start()
+    this.state = 'running'
+    logger.info('[ScrollManager] Resumed')
+  }
+
+  /**
+   * Refreshes all ScrollTrigger instances after layout changes or orientation change.
+   */
+  public resize(_width: number, _height: number, _pixelRatio: number): void {
+    ScrollTrigger.refresh()
+  }
+
+  public dispose(): void {
+    // ── Remove GSAP ticker ────────────────────────────────────────────────
+    if (lenisConfig.syncStrategy === 'gsap-ticker') {
+      gsap.ticker.remove(this.onGsapTick)
+    }
+
+    // ── Destroy Lenis ─────────────────────────────────────────────────────
+    if (this._lenisInstance) {
+      this._lenisInstance.destroy()
+      this._lenisInstance = null
+    }
+
+    this.subscribers.clear()
+    this.state = 'destroyed'
+    logger.info('[ScrollManager] Disposed')
+  }
+
+  // ─── Tickable ─────────────────────────────────────────────────────────────
+
+  /**
+   * Called every frame by EngineRuntime if NOT using GSAP-ticker strategy.
+   */
+  public tick(time: number, _delta: number, _frame: number): void {
     if (this.state !== 'running') return
 
     if (lenisConfig.syncStrategy !== 'gsap-ticker' && this._lenisInstance) {
-      this._lenisInstance.raf(_time)
+      this._lenisInstance.raf(time)
     }
 
-    // Notify local subscribers (high frequency)
     if (this.scrollState.isScrolling) {
-      this.subscribers.forEach((callback) => callback(this.scrollState))
+      this.subscribers.forEach((cb) => cb(this.scrollState))
     }
   }
 
-  /**
-   * Internal update method called by Lenis callback.
-   */
-  public updateState(newState: Partial<ScrollState>): void {
-    this.scrollState = { ...this.scrollState, ...newState }
-
-    // Emit global event (lower frequency/debounced usually, but mapped here for architecture)
-    globalEventBus.emit('scroll:update', {
-      scrollY: this.scrollState.scrollY,
-      progress: this.scrollState.progress,
-      velocity: this.scrollState.velocity,
-      direction: this.scrollState.direction,
-    })
-  }
-
-  public getState(): ScrollState {
-    return { ...this.scrollState }
-  }
+  // ─── ScrollObservable ─────────────────────────────────────────────────────
 
   /**
    * Subscribe to high-frequency scroll updates.
+   * Returns an unsubscribe function.
    */
   public onScroll(callback: ScrollCallback): () => void {
     this.subscribers.add(callback)
@@ -119,26 +163,42 @@ export class ScrollManager implements EngineManager, Tickable, ScrollObservable 
     }
   }
 
+  // ─── Public API ───────────────────────────────────────────────────────────
+
   /**
-   * Imperatively scroll to a target.
+   * Imperatively scroll to a target element or position.
    */
-  public scrollTo(target: string | HTMLElement, _options: Record<string, unknown> = {}): void {
+  public scrollTo(target: string | HTMLElement | number, options: object = {}): void {
     if (this._lenisInstance) {
-      this._lenisInstance.scrollTo(target, _options)
+      this._lenisInstance.scrollTo(target as string | HTMLElement, options)
     }
-    logger.debug(`Scrolling to ${target}`)
   }
 
-  public dispose(): void {
-    if (lenisConfig.syncStrategy === 'gsap-ticker') {
-      gsap.ticker.remove(this.onGsapTick)
-    }
+  public getState(): ScrollState {
+    return { ...this.scrollState }
+  }
 
-    if (this._lenisInstance) {
-      this._lenisInstance.destroy()
-      this._lenisInstance = null
+  public getLenis(): Lenis | null {
+    return this._lenisInstance
+  }
+
+  // ─── Internal ─────────────────────────────────────────────────────────────
+
+  private onGsapTick = (time: number): void => {
+    if (this.state === 'running' && this._lenisInstance) {
+      // GSAP ticker provides time in seconds; Lenis expects milliseconds.
+      this._lenisInstance.raf(time * 1000)
     }
-    this.subscribers.clear()
-    this.state = 'destroyed'
+  }
+
+  public updateState(newState: Partial<ScrollState>): void {
+    this.scrollState = { ...this.scrollState, ...newState }
+
+    globalEventBus.emit('scroll:update', {
+      scrollY: this.scrollState.scrollY,
+      progress: this.scrollState.progress,
+      velocity: this.scrollState.velocity,
+      direction: this.scrollState.direction,
+    })
   }
 }
