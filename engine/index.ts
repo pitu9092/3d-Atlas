@@ -7,6 +7,7 @@
  */
 
 export * from './animation'
+export * from './assets'
 export * from './camera'
 export * from './events'
 export * from './loader'

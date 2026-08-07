@@ -102,6 +102,15 @@ export class AssetLoader {
   }
 
   /**
+   * Generic type-dispatched load method.
+   * Used by the Phase 6 pipeline (engine/assets/AssetLoader.ts) to delegate
+   * raw loading without needing to know which specific loader to invoke.
+   */
+  public async loadByType<T>(url: string, type: AssetType): Promise<T> {
+    return this.enqueue<T>(url, type)
+  }
+
+  /**
    * Retrieve a cached asset by URL and type.
    * Returns null if not in cache.
    */

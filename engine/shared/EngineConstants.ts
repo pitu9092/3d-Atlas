@@ -20,4 +20,11 @@ export const EngineConstants = {
 
   // Loaders
   MAX_CONCURRENT_LOADS: 4,
+
+  // Asset Pipeline (Phase 6)
+  ASSET_CACHE_MAX_MEMORY_MB: 512,
+  ASSET_LOAD_TIMEOUT_MS: 30_000,
+  ASSET_MAX_PRIORITY_LEVELS: 5,
+  ASSET_MAX_RETRY_ATTEMPTS: 3,
+  ASSET_RETRY_BASE_DELAY_MS: 500,
 } as const

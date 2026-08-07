@@ -36,6 +36,15 @@ export interface EventPayloadMap {
 
   'perf:fps_drop': { currentFps: number; targetFps: number }
   'perf:quality_adjust': { previousQuality: string; newQuality: string }
+
+  // Asset Pipeline (Phase 6)
+  'asset:load_start': { id: string; url: string; type: string }
+  'asset:load_progress': { id: string; progress: number }
+  'asset:load_complete': { id: string; url: string; durationMs: number; sizeBytes: number }
+  'asset:load_error': { id: string; url: string; error: string; attempts: number }
+  'asset:cache_hit': { id: string }
+  'asset:cache_evict': { id: string; reason: 'lru' | 'manual' | 'memory_pressure' }
+  'asset:queue_drain': { totalLoaded: number; totalErrors: number }
 }
 
 export type EventCallback<T extends keyof EventPayloadMap = string> = (
