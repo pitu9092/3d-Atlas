@@ -6,6 +6,8 @@
  * Responsibilities: Batch queueing, concurrency control, global Three.js DefaultLoadingManager integration.
  */
 
+import * as THREE from 'three'
+
 import { logger } from '@/lib/core'
 
 import { globalEventBus } from '../events'
@@ -35,7 +37,17 @@ export class LoadingManager implements EngineManager {
     if (this.state !== 'uninitialized') return
     this.state = 'initializing'
 
-    // TODO: Hook into THREE.DefaultLoadingManager if needed
+    THREE.DefaultLoadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
+      logger.debug(`[THREE] Started loading: ${url}. Loaded ${itemsLoaded} of ${itemsTotal}.`)
+    }
+
+    THREE.DefaultLoadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      logger.debug(`[THREE] Loading: ${url}. Loaded ${itemsLoaded} of ${itemsTotal}.`)
+    }
+
+    THREE.DefaultLoadingManager.onError = (url) => {
+      logger.error(`[THREE] Error loading: ${url}`)
+    }
 
     this.state = 'ready'
   }

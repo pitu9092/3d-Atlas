@@ -7,7 +7,11 @@
  * emitting global scroll events.
  */
 
+import Lenis from 'lenis'
+
+import { lenisConfig } from '@/config/lenis'
 import { logger } from '@/lib/core'
+import { gsap } from '@/lib/gsap'
 
 import { globalEventBus } from '../events'
 import { type EngineManager, type LifecycleState, type Tickable } from '../shared/EngineTypes'
@@ -29,25 +33,56 @@ export class ScrollManager implements EngineManager, Tickable, ScrollObservable 
 
   private subscribers: Set<ScrollCallback> = new Set()
 
-  // Note: Lenis instance will be injected or initialized here during implementation
+  private _lenisInstance: Lenis | null = null
 
   public init(): void {
     if (this.state !== 'uninitialized') return
     this.state = 'initializing'
 
-    // TODO: Initialize Lenis instance using config/lenis.ts
-    logger.info('ScrollManager initialized (Lenis ready for implementation)')
+    this._lenisInstance = new Lenis({
+      duration: lenisConfig.duration,
+      easing: lenisConfig.easing,
+      smoothWheel: lenisConfig.smoothWheel,
+      touchMultiplier: lenisConfig.touchMultiplier,
+      infinite: lenisConfig.infinite,
+    })
+
+    this._lenisInstance.on('scroll', (e: Lenis) => {
+      this.updateState({
+        scrollY: e.scroll,
+        velocity: e.velocity,
+        direction: e.direction,
+        progress: e.progress,
+        isScrolling: e.velocity !== 0,
+      })
+    })
+
+    // Bind to GSAP Ticker to keep animations and scroll perfectly synced
+    if (lenisConfig.syncStrategy === 'gsap-ticker') {
+      gsap.ticker.add(this.onGsapTick)
+    }
+
+    logger.info('ScrollManager initialized with Lenis')
 
     this.state = 'running'
   }
 
+  private onGsapTick = (time: number, _deltaTime: number, _frame: number): void => {
+    if (this.state === 'running' && this._lenisInstance) {
+      // Lenis expects ms time
+      this._lenisInstance.raf(time * 1000)
+    }
+  }
+
   /**
-   * Called by the global render loop to drive scroll physics.
+   * Called by the global render loop to drive scroll physics if not using GSAP ticker.
    */
   public tick(_time: number): void {
     if (this.state !== 'running') return
 
-    // TODO: lenisInstance?.raf(time)
+    if (lenisConfig.syncStrategy !== 'gsap-ticker' && this._lenisInstance) {
+      this._lenisInstance.raf(_time)
+    }
 
     // Notify local subscribers (high frequency)
     if (this.scrollState.isScrolling) {
@@ -88,12 +123,21 @@ export class ScrollManager implements EngineManager, Tickable, ScrollObservable 
    * Imperatively scroll to a target.
    */
   public scrollTo(target: string | HTMLElement, _options: Record<string, unknown> = {}): void {
-    // TODO: lenisInstance?.scrollTo(target, options)
+    if (this._lenisInstance) {
+      this._lenisInstance.scrollTo(target, _options)
+    }
     logger.debug(`Scrolling to ${target}`)
   }
 
   public dispose(): void {
-    // TODO: lenisInstance?.destroy()
+    if (lenisConfig.syncStrategy === 'gsap-ticker') {
+      gsap.ticker.remove(this.onGsapTick)
+    }
+
+    if (this._lenisInstance) {
+      this._lenisInstance.destroy()
+      this._lenisInstance = null
+    }
     this.subscribers.clear()
     this.state = 'destroyed'
   }

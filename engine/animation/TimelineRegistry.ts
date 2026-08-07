@@ -10,12 +10,12 @@
 import { logger } from '@/lib/core'
 
 export class TimelineRegistry {
-  private timelines: Map<string, unknown> = new Map() // 'any' placeholder for GSAP timeline
+  private timelines: Map<string, gsap.core.Timeline> = new Map()
 
   /**
    * Registers a new timeline.
    */
-  public register(id: string, timeline: unknown): void {
+  public register(id: string, timeline: gsap.core.Timeline): void {
     if (this.timelines.has(id)) {
       logger.warn(`Timeline with ID ${id} is already registered. Overwriting.`)
       this.kill(id)
@@ -26,7 +26,7 @@ export class TimelineRegistry {
   /**
    * Retrieves a timeline by ID.
    */
-  public get(id: string): unknown | undefined {
+  public get(id: string): gsap.core.Timeline | undefined {
     return this.timelines.get(id)
   }
 
@@ -36,7 +36,7 @@ export class TimelineRegistry {
   public kill(id: string): void {
     const tl = this.timelines.get(id)
     if (tl) {
-      // TODO: tl.kill() (GSAP integration)
+      tl.kill()
       this.timelines.delete(id)
     }
   }
@@ -45,8 +45,8 @@ export class TimelineRegistry {
    * Pauses all registered timelines.
    */
   public pauseAll(): void {
-    this.timelines.forEach((_tl) => {
-      // TODO: tl.pause()
+    this.timelines.forEach((tl) => {
+      tl.pause()
     })
   }
 
@@ -54,8 +54,8 @@ export class TimelineRegistry {
    * Resumes all registered timelines.
    */
   public resumeAll(): void {
-    this.timelines.forEach((_tl) => {
-      // TODO: tl.resume()
+    this.timelines.forEach((tl) => {
+      tl.resume()
     })
   }
 
@@ -63,8 +63,8 @@ export class TimelineRegistry {
    * Kills all registered timelines and clears the registry.
    */
   public clear(): void {
-    this.timelines.forEach((_tl) => {
-      // TODO: tl.kill()
+    this.timelines.forEach((tl) => {
+      tl.kill()
     })
     this.timelines.clear()
   }

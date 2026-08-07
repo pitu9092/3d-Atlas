@@ -9,6 +9,7 @@
 
 import { logger } from '@/lib/core'
 import { featureFlags } from '@/lib/core/featureFlags'
+import { gsap } from '@/lib/gsap'
 
 import { type EngineManager, type LifecycleState } from '../shared/EngineTypes'
 
@@ -42,17 +43,14 @@ export class AnimationManager implements EngineManager {
         : { matches: false }
     this.animationState.isReducedMotion = mql.matches || featureFlags.forceReducedMotion
 
-    // TODO: Initialize GSAP plugins using config/gsap.ts
-    // TODO: Apply global GSAP defaults
-
     if (this.animationState.isReducedMotion) {
-      logger.info('Reduced motion enabled. Setting global timescale or replacing tweens.')
-      // TODO: GSAP global timeScale or replace timelines
+      logger.info('Reduced motion enabled. Forcing global timescale to 0 (jump to end).')
+      gsap.globalTimeline.timeScale(1000) // Instantly complete animations
     }
 
     this.animationState.isGSAPReady = true
     this.state = 'ready'
-    logger.info('AnimationManager initialized (GSAP ready for implementation)')
+    logger.info('AnimationManager initialized with GSAP')
   }
 
   /**
@@ -60,7 +58,7 @@ export class AnimationManager implements EngineManager {
    */
   public setGlobalTimeScale(scale: number): void {
     this.animationState.globalTimeScale = scale
-    // TODO: gsap.globalTimeline.timeScale(scale)
+    gsap.globalTimeline.timeScale(scale)
   }
 
   public getState(): AnimationState {

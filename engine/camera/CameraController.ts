@@ -38,13 +38,24 @@ export class CameraController {
    * Called every frame to compute the next camera state smoothly.
    */
   public tick(_time: number, _delta: number, currentState: CameraState): CameraState {
-    // Math logic for lerping camera position and applying parallax goes here
+    // Simple lerp factor
+    const lerpFactor = 0.05
+
+    // Target pos
+    const tx = this.targetPosition.x + this.parallaxOffset.x
+    const ty = this.targetPosition.y + this.parallaxOffset.y
+    const tz = this.targetPosition.z
+
+    // Lerp
+    const x = currentState.x + (tx - currentState.x) * lerpFactor
+    const y = currentState.y + (ty - currentState.y) * lerpFactor
+    const z = currentState.z + (tz - currentState.z) * lerpFactor
 
     return {
       ...currentState,
-      x: this.targetPosition.x + this.parallaxOffset.x,
-      y: this.targetPosition.y + this.parallaxOffset.y,
-      z: this.targetPosition.z,
+      x,
+      y,
+      z,
     }
   }
 }

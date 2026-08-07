@@ -7,6 +7,8 @@
  * and coordinating with CameraController.
  */
 
+import * as THREE from 'three'
+
 import { threeConfig } from '@/config/three'
 import { logger } from '@/lib/core'
 
@@ -25,8 +27,7 @@ export class CameraManager implements EngineManager, Tickable, Resizable {
 
   public controller: CameraController
 
-  // Three.js PerspectiveCamera placeholder
-  private cameraInstance: unknown = null
+  private cameraInstance: THREE.PerspectiveCamera | null = null
 
   private cameraState: CameraState = {
     x: threeConfig.canvas.camera.position[0],
@@ -47,20 +48,25 @@ export class CameraManager implements EngineManager, Tickable, Resizable {
     if (this.state !== 'uninitialized') return
     this.state = 'initializing'
 
-    // Note: If using R3F, this class might just manage state/controller logic
-    // and sync with useThree().camera, rather than instantiating it directly.
+    this.cameraInstance = new THREE.PerspectiveCamera(
+      this.cameraState.fov,
+      window.innerWidth / window.innerHeight,
+      threeConfig.canvas.camera.near,
+      threeConfig.canvas.camera.far,
+    )
+    this.cameraInstance.position.set(this.cameraState.x, this.cameraState.y, this.cameraState.z)
 
-    logger.info('CameraManager initialized')
+    logger.info('CameraManager initialized with THREE.PerspectiveCamera')
     this.state = 'ready'
   }
 
   /**
    * Updates camera aspect ratio on window resize.
    */
-  public resize(_width: number, _height: number, _pixelRatio: number): void {
-    if (this.cameraInstance) {
-      // TODO: this.cameraInstance.aspect = width / height
-      // TODO: this.cameraInstance.updateProjectionMatrix()
+  public resize(width: number, height: number, _pixelRatio: number): void {
+    if (this.cameraInstance && height > 0) {
+      this.cameraInstance.aspect = width / height
+      this.cameraInstance.updateProjectionMatrix()
     }
   }
 
@@ -73,8 +79,17 @@ export class CameraManager implements EngineManager, Tickable, Resizable {
     this.cameraState = this.controller.tick(time, delta, this.cameraState)
 
     if (this.cameraInstance) {
-      // TODO: Apply state to cameraInstance
-      // this.cameraInstance.position.set(...)
+      this.cameraInstance.position.set(this.cameraState.x, this.cameraState.y, this.cameraState.z)
+      this.cameraInstance.rotation.set(
+        this.cameraState.rotationX,
+        this.cameraState.rotationY,
+        this.cameraState.rotationZ,
+      )
+
+      if (this.cameraInstance.fov !== this.cameraState.fov) {
+        this.cameraInstance.fov = this.cameraState.fov
+        this.cameraInstance.updateProjectionMatrix()
+      }
     }
   }
 
@@ -82,7 +97,12 @@ export class CameraManager implements EngineManager, Tickable, Resizable {
     return { ...this.cameraState }
   }
 
+  public getCamera(): THREE.PerspectiveCamera | null {
+    return this.cameraInstance
+  }
+
   public dispose(): void {
+    this.cameraInstance = null
     this.state = 'destroyed'
   }
 }

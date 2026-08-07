@@ -6,6 +6,8 @@
  * Responsibilities: WebGL initialization, applying threeConfig, managing render loops.
  */
 
+import * as THREE from 'three'
+
 import { threeConfig } from '@/config/three'
 import { logger } from '@/lib/core'
 
@@ -28,7 +30,7 @@ export class Renderer implements EngineManager, Tickable, Resizable {
   public loop: RenderLoop
 
   // WebGLRenderer instance placeholder
-  private gl: unknown = null
+  private gl: THREE.WebGLRenderer | null = null
 
   constructor() {
     this.canvasManager = new CanvasManager()
@@ -40,26 +42,39 @@ export class Renderer implements EngineManager, Tickable, Resizable {
     if (this.state !== 'uninitialized') return
     this.state = 'initializing'
 
-    // Note: If using React Three Fiber, this class might just track state
-    // rather than directly instantiating THREE.WebGLRenderer.
-    // The architecture supports both raw Three.js and R3F.
+    const canvas = this.canvasManager.getCanvas()
+    if (canvas) {
+      this.gl = new THREE.WebGLRenderer({
+        canvas,
+        alpha: threeConfig.canvas.gl.alpha,
+        antialias: threeConfig.canvas.gl.antialias,
+        powerPreference: threeConfig.canvas.gl.powerPreference,
+      })
 
-    logger.info('Renderer initialized (WebGL ready for implementation)', threeConfig)
+      this.gl.outputColorSpace = THREE.SRGBColorSpace
+      this.gl.toneMapping = THREE.ACESFilmicToneMapping
+    }
+
+    logger.info('Renderer initialized with THREE.WebGLRenderer')
     this.state = 'ready'
   }
 
-  public resize(_width: number, _height: number, _pixelRatio: number): void {
+  public resize(width: number, height: number, pixelRatio: number): void {
     if (this.gl) {
-      // TODO: this.gl.setSize(width, height)
-      // TODO: this.gl.setPixelRatio(pixelRatio)
+      this.gl.setSize(width, height)
+      this.gl.setPixelRatio(pixelRatio)
     }
   }
 
   public tick(_time: number, _delta: number, _frame: number): void {
     if (this.state !== 'running' || !this.gl) return
 
-    // TODO: Render post-processing or raw scene
-    // this.gl.render(scene, camera)
+    // Called externally by SceneManager or RenderLoop when ready to render
+  }
+
+  public render(scene: THREE.Scene, camera: THREE.Camera): void {
+    if (this.state !== 'running' || !this.gl) return
+    this.gl.render(scene, camera)
   }
 
   public dispose(): void {
@@ -68,7 +83,8 @@ export class Renderer implements EngineManager, Tickable, Resizable {
     this.canvasManager.dispose()
 
     if (this.gl) {
-      // TODO: this.gl.dispose()
+      this.gl.dispose()
+      this.gl = null
     }
 
     this.state = 'destroyed'
