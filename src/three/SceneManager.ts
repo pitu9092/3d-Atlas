@@ -4,16 +4,17 @@ import { GlobeObject } from './GlobeObject';
 
 export class SceneManager {
   private container: HTMLElement;
-  private renderer: THREE.WebGLRenderer;
+  private renderer: THREE.WebGLRenderer | null = null;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private cameraManager: CameraManager;
-  private globe: GlobeObject;
-  private starfield!: THREE.Points;
+  private globe: GlobeObject | null = null;
+  private starfield: THREE.Points | null = null;
   private animationFrameId: number | null = null;
   private lastTime: number = performance.now();
   private scrollProgress: number = 0;
   private isDisposed: boolean = false;
+  private hasWebGL: boolean = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -23,21 +24,29 @@ export class SceneManager {
     this.scene.fog = new THREE.FogExp2(0x000000, 0.08);
 
     // 2. Camera setup
-    const aspect = container.clientWidth / container.clientHeight;
+    const aspect = (container.clientWidth || window.innerWidth) / (container.clientHeight || window.innerHeight);
     this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
     this.cameraManager = new CameraManager(this.camera);
 
-    // 3. Renderer setup
-    this.renderer = new THREE.WebGLRenderer({
-      powerPreference: 'high-performance',
-      antialias: true,
-      alpha: true,
-    });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
-    container.appendChild(this.renderer.domElement);
+    // 3. Renderer setup with safe WebGL fallback
+    try {
+      this.renderer = new THREE.WebGLRenderer({
+        powerPreference: 'high-performance',
+        antialias: true,
+        alpha: true,
+      });
+      this.renderer.setSize(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.2;
+      container.appendChild(this.renderer.domElement);
+      this.hasWebGL = true;
+    } catch (err) {
+      console.warn('WebGL context creation failed or disabled. Operating in lightweight mode.', err);
+      this.hasWebGL = false;
+      this.isDisposed = true;
+      return;
+    }
 
     // 4. Lighting setup
     this.setupLighting();
@@ -58,27 +67,24 @@ export class SceneManager {
     const ambientLight = new THREE.AmbientLight(0x0e1c2e, 1.2);
     this.scene.add(ambientLight);
 
-    // Main solar light illuminating earth
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
     sunLight.position.set(5, 3, 5);
     this.scene.add(sunLight);
 
-    // Secondary cyan rim light
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 2.0);
+    const rimLight = new THREE.DirectionalLight(0xf45300, 1.8);
     rimLight.position.set(-5, -2, -3);
     this.scene.add(rimLight);
   }
 
   private createStarfield() {
-    const starCount = 2000;
+    const starCount = 1500;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
 
     const c1 = new THREE.Color(0xffffff);
-    const c2 = new THREE.Color(0x38bdf8);
+    const c2 = new THREE.Color(0xf45300);
 
     for (let i = 0; i < starCount; i++) {
-      // Distribute stars on outer sphere shell
       const r = 25 + Math.random() * 20;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
@@ -87,7 +93,7 @@ export class SceneManager {
       starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       starPositions[i * 3 + 2] = r * Math.cos(phi);
 
-      const col = Math.random() > 0.3 ? c1 : c2;
+      const col = Math.random() > 0.15 ? c1 : c2;
       starColors[i * 3] = col.r;
       starColors[i * 3 + 1] = col.g;
       starColors[i * 3 + 2] = col.b;
@@ -98,10 +104,10 @@ export class SceneManager {
     starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
     const starMat = new THREE.PointsMaterial({
-      size: 0.08,
+      size: 0.06,
       vertexColors: true,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.5,
       depthWrite: false,
     });
 
@@ -110,15 +116,15 @@ export class SceneManager {
   }
 
   private onResize = () => {
-    if (!this.container || this.isDisposed) return;
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
+    if (!this.container || this.isDisposed || !this.renderer) return;
+    const width = this.container.clientWidth || window.innerWidth;
+    const height = this.container.clientHeight || window.innerHeight;
 
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   };
 
   public setScrollProgress(progress: number) {
@@ -130,7 +136,7 @@ export class SceneManager {
   }
 
   private animate = () => {
-    if (this.isDisposed) return;
+    if (this.isDisposed || !this.renderer) return;
 
     this.animationFrameId = requestAnimationFrame(this.animate);
 
@@ -138,13 +144,13 @@ export class SceneManager {
     const delta = Math.min((now - this.lastTime) / 1000, 0.1);
     this.lastTime = now;
 
-    // Update camera and globe
     this.cameraManager.update(this.scrollProgress, delta);
-    this.globe.update(delta, this.scrollProgress);
+    if (this.globe) {
+      this.globe.update(delta, this.scrollProgress);
+    }
 
-    // Slowly rotate background starfield
     if (this.starfield) {
-      this.starfield.rotation.y += 0.015 * delta;
+      this.starfield.rotation.y += 0.01 * delta;
     }
 
     this.renderer.render(this.scene, this.camera);
@@ -157,16 +163,21 @@ export class SceneManager {
     }
     window.removeEventListener('resize', this.onResize);
 
-    this.globe.dispose();
+    if (this.globe) {
+      this.globe.dispose();
+    }
 
     if (this.starfield) {
       this.starfield.geometry.dispose();
       (this.starfield.material as THREE.Material).dispose();
     }
 
-    this.renderer.dispose();
-    if (this.container && this.renderer.domElement) {
-      this.container.removeChild(this.renderer.domElement);
+    if (this.renderer) {
+      this.renderer.dispose();
+      if (this.container && this.renderer.domElement && this.renderer.domElement.parentNode) {
+        this.container.removeChild(this.renderer.domElement);
+      }
+      this.renderer = null;
     }
   }
 }

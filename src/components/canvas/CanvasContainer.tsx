@@ -38,11 +38,17 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({ scrollProgress
     }
   }, [scrollProgress]);
 
+  // Fade out 3D globe as user scrolls past the Hero into Section 02
+  const globeOpacity = Math.max(0, 1 - scrollProgress * 4.5);
+
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-0 pointer-events-none w-full h-full overflow-hidden"
-      style={{ touchAction: 'none' }}
+      className="fixed inset-0 z-0 pointer-events-none w-full h-full overflow-hidden transition-opacity duration-300"
+      style={{
+        touchAction: 'none',
+        opacity: globeOpacity,
+      }}
     />
   );
 };

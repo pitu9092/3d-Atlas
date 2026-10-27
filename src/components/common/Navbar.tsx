@@ -1,85 +1,74 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Globe, Radio, Shield, Terminal, ArrowUpRight, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Menu, X } from 'lucide-react';
+import Image from 'next/image';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 flex justify-center p-4 md:p-6 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between gap-4 w-full max-w-6xl px-4 py-2.5 md:px-6 md:py-3 rounded-full border border-white/10 bg-black/60 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6)] transition-all duration-300">
+    <header className="fixed top-0 left-0 w-full z-50 flex justify-center px-4 py-4 md:px-8 md:py-6 pointer-events-none">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-7xl px-5 py-3 md:px-8 md:py-3.5 rounded-full border border-white/10 bg-black/70 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] transition-all duration-300">
         
-        {/* Logo and Brand */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500/10 border border-cyan-400/30">
-            <Globe className="w-4 h-4 text-cyan-400 animate-spin" style={{ animationDuration: '18s' }} />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-widest text-white uppercase font-mono">
-              3D ATLAS
+        {/* Brand Logo */}
+        <a href="#hero" className="flex items-center gap-2 group">
+          <div className="flex items-center gap-1.5">
+            <span className="font-heading font-bold text-base md:text-lg tracking-wider text-white uppercase">
+              UNITED CARRIERS
             </span>
-            <span className="text-[9px] text-cyan-400/80 font-mono tracking-wider -mt-1 hidden sm:block">
-              GLOBAL TELEMETRY V2.4
-            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f45300] shadow-[0_0_8px_#f45300]" />
           </div>
-        </div>
+        </a>
 
         {/* Desktop Navigation Links */}
-        <div className="hidden lg:flex items-center gap-7">
+        <div className="hidden md:flex items-center gap-8">
           <a
-            href="#hero"
-            className="text-[13px] font-medium text-slate-300 hover:text-cyan-400 transition-colors tracking-wide"
+            href="#services"
+            className="text-[13px] font-medium text-white/70 hover:text-white transition-colors tracking-wide"
           >
-            Overview
+            Services
           </a>
           <a
-            href="#vision"
-            className="text-[13px] font-medium text-slate-300 hover:text-cyan-400 transition-colors tracking-wide"
+            href="#about"
+            className="text-[13px] font-medium text-white/70 hover:text-white transition-colors tracking-wide"
           >
-            Vision
+            About
           </a>
           <a
-            href="#network"
-            className="text-[13px] font-medium text-slate-300 hover:text-cyan-400 transition-colors tracking-wide"
+            href="#why-us"
+            className="text-[13px] font-medium text-white/70 hover:text-white transition-colors tracking-wide"
           >
-            Logistics Grid
+            Why us
           </a>
           <a
-            href="#command"
-            className="text-[13px] font-medium text-slate-300 hover:text-cyan-400 transition-colors tracking-wide"
+            href="#insights"
+            className="text-[13px] font-medium text-white/70 hover:text-white transition-colors tracking-wide"
           >
-            Command Matrix
+            Insights
           </a>
           <a
-            href="#footer"
-            className="text-[13px] font-medium text-slate-300 hover:text-cyan-400 transition-colors tracking-wide"
+            href="#faq"
+            className="text-[13px] font-medium text-white/70 hover:text-white transition-colors tracking-wide"
           >
-            Terminal
+            FAQ
           </a>
         </div>
 
-        {/* Live Status and Action Button */}
+        {/* Action Button & Mobile Toggle */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 font-mono text-[11px] text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>48 SATS // 14ms</span>
-          </div>
-
           <a
-            href="#command"
-            className="group relative flex items-center gap-2 px-4 py-2 md:px-5 md:py-2 rounded-full bg-cyan-400 text-black font-semibold text-xs tracking-tight transition-all duration-300 hover:bg-white hover:shadow-[0_0_25px_rgba(56,189,248,0.6)] active:scale-95"
+            href="#contact"
+            className="group flex items-center gap-2 px-5 py-2 md:px-6 md:py-2.5 rounded-full bg-white text-black font-heading font-medium text-[13px] tracking-tight transition-all duration-300 hover:bg-[#f45300] hover:text-white hover:shadow-[0_0_20px_rgba(244,83,0,0.4)] active:scale-95"
           >
-            <span>Console</span>
+            <span>Talk with us</span>
             <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
 
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-1.5 text-slate-300 hover:text-white rounded-full transition-colors"
+            className="md:hidden p-1.5 text-white/80 hover:text-white rounded-full transition-colors"
             aria-label="Toggle Navigation"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -89,39 +78,49 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden pointer-events-auto fixed top-20 inset-x-4 p-5 rounded-2xl glass-panel border border-white/10 flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="md:hidden pointer-events-auto fixed top-20 inset-x-4 p-6 rounded-3xl bg-black/90 backdrop-blur-2xl border border-white/10 flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
           <a
-            href="#hero"
+            href="#services"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-medium text-slate-200 hover:text-cyan-400 py-1"
+            className="text-base font-heading font-medium text-white/80 hover:text-[#f45300] py-1 border-b border-white/10"
           >
-            Overview
+            Services
           </a>
           <a
-            href="#vision"
+            href="#about"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-medium text-slate-200 hover:text-cyan-400 py-1"
+            className="text-base font-heading font-medium text-white/80 hover:text-[#f45300] py-1 border-b border-white/10"
           >
-            Vision
+            About
           </a>
           <a
-            href="#network"
+            href="#why-us"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-medium text-slate-200 hover:text-cyan-400 py-1"
+            className="text-base font-heading font-medium text-white/80 hover:text-[#f45300] py-1 border-b border-white/10"
           >
-            Logistics Grid
+            Why us
           </a>
           <a
-            href="#command"
+            href="#insights"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-medium text-slate-200 hover:text-cyan-400 py-1"
+            className="text-base font-heading font-medium text-white/80 hover:text-[#f45300] py-1 border-b border-white/10"
           >
-            Command Matrix
+            Insights
           </a>
-          <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-mono text-cyan-400">
-            <span>SYS: OPTIMAL</span>
-            <span>LATENCY: 14MS</span>
-          </div>
+          <a
+            href="#faq"
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-base font-heading font-medium text-white/80 hover:text-[#f45300] py-1"
+          >
+            FAQ
+          </a>
+          <a
+            href="#contact"
+            onClick={() => setMobileMenuOpen(false)}
+            className="w-full mt-2 py-3 rounded-full bg-[#f45300] text-white font-heading text-center text-sm font-medium"
+          >
+            Talk with us
+          </a>
         </div>
       )}
     </header>

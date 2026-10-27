@@ -1,91 +1,183 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: #000000;
-    --foreground: #f8fafc;
-    --color-obsidian: #05080c;
-    --color-card: #0a0e17;
-    --color-card-border: rgba(255, 255, 255, 0.08);
-    --color-cyan-glow: #38bdf8;
-    --color-blue-glow: #4aa8ff;
-    --color-emerald-glow: #34d399;
-  }
-
-  * {
-    border-color: var(--color-card-border);
-  }
-
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    overflow-x: hidden;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    margin: 0;
-    padding: 0;
-  }
-
-  /* Custom subtle scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #000000;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 9999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(74, 168, 255, 0.5);
-  }
-
-  ::selection {
-    background: #38bdf8;
-    color: #000000;
-  }
+/* ----------------------------------------------------
+   UNITED CARRIERS - CUSTOM FONT DEFINITIONS
+---------------------------------------------------- */
+@font-face {
+  font-family: 'BT Steinhart';
+  src: url('/fonts/BTSteinhart-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* Glassmorphism & Sci-Fi Glow Utilities */
-.glass-panel {
-  background: rgba(10, 14, 23, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8);
+@font-face {
+  font-family: 'BT Steinhart';
+  src: url('/fonts/BTSteinhart-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'BT Steinhart Mono';
+  src: url('/fonts/BTSteinhart-RegularMono.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/fonts/HelveticaNeue-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Helvetica Neue';
+  src: url('/fonts/HelveticaNeue-Roman.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ----------------------------------------------------
+   ROOT DESIGN TOKENS
+---------------------------------------------------- */
+:root {
+  --font-heading: 'BT Steinhart', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'BT Steinhart Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-body: 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --color-m-black: #000000;
+  --color-m-white: #ffffff;
+  --color-bg-dark: #000000;
+  --color-bg-light: #f4f5f8;
+  --color-bg-card-light: #ffffff;
+  --color-content-main: #ffffff;
+  --color-content-dark: #0c1017;
+  --color-content-sub: rgba(255, 255, 255, 0.65);
+  --color-content-sub-dark: #525a66;
+  --color-accent-orange: #f45300;
+  --color-accent-blue: #0016cb;
+  --color-accent-cyan: #38bdf8;
+  --color-border-dark: rgba(255, 255, 255, 0.12);
+  --color-border-light: rgba(0, 0, 0, 0.08);
+}
+
+body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-content-main);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-orange);
+}
+
+::selection {
+  background: var(--color-accent-orange);
+  color: #ffffff;
+}
+
+/* ----------------------------------------------------
+   HERO GLOBE ATMOSPHERIC GLOW EFFECTS
+---------------------------------------------------- */
+.home-hero-globe-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-hero-globe-shadow {
+  position: absolute;
+  inset: -10%;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(48px);
+  mix-blend-mode: screen;
+}
+
+.home-hero-globe-shadow.orange-plus {
+  background: radial-gradient(circle at 75% 25%, #ff5500 0%, rgba(244, 83, 0, 0.45) 35%, transparent 70%);
+  opacity: 0.9;
+}
+
+.home-hero-globe-shadow.blue-plus {
+  background: radial-gradient(circle at 45% 95%, #0016cb 0%, rgba(0, 22, 203, 0.5) 40%, rgba(56, 189, 248, 0.2) 60%, transparent 80%);
+  opacity: 0.85;
+}
+
+/* Glassmorphism Styles */
+.glass-nav {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-pill {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  transition: all 0.25s ease;
 }
 
-.glow-cyan {
-  box-shadow: 0 0 40px -10px rgba(56, 189, 248, 0.35);
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-.glow-blue {
-  box-shadow: 0 0 50px -10px rgba(74, 168, 255, 0.4);
+/* Speedometer HUD Styling */
+.speed-badge {
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.glow-text-cyan {
-  text-shadow: 0 0 24px rgba(56, 189, 248, 0.5);
+/* Subtle pulse animation for telemetry */
+@keyframes radarPulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
 }
 
-.scanline-overlay {
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.25) 50%
-  ), linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.02),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.02)
-  );
-  background-size: 100% 3px, 6px 100%;
-  pointer-events: none;
+.radar-pulse {
+  animation: radarPulse 3s infinite ease-in-out;
 }

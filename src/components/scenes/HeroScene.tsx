@@ -1,88 +1,122 @@
 'use client';
 
-import React from 'react';
-import { ArrowDown, Radio, Activity, Compass, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowDown, ArrowUpRight, Eye, EyeOff, RotateCw } from 'lucide-react';
 
 export const HeroScene: React.FC = () => {
+  const [speed, setSpeed] = useState<number>(1.0);
+  const [showLabels, setShowLabels] = useState<boolean>(true);
+
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-32 pb-16 text-center select-none"
+      className="relative min-h-screen flex items-center justify-between px-6 sm:px-12 lg:px-20 pt-28 pb-16 text-left select-none overflow-hidden"
     >
-      {/* Background Soft Diffuse Glow */}
+      {/* Ambient background glows */}
       <div
         aria-hidden="true"
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(90vw,700px)] h-[min(90vw,700px)] rounded-full blur-[140px] pointer-events-none -z-10"
+        className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[160px] pointer-events-none -z-10"
         style={{
-          background: 'radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(74,168,255,0.06) 45%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(244,83,0,0.12) 0%, rgba(0,22,203,0.08) 50%, transparent 75%)',
         }}
       />
 
-      <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
+      <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         
-        {/* Top Sci-Fi Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-cyan-400/30 bg-cyan-950/20 backdrop-blur-md">
-          <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
-            Global Planetary Command // V2.4
-          </span>
+        {/* Left Column: Brand Statement & CTA */}
+        <div className="lg:col-span-7 flex flex-col items-start z-10">
+          
+          {/* Tag Line */}
+          <div className="inline-flex items-center gap-2 mb-6">
+            <span className="font-mono text-xs uppercase tracking-[0.25em] text-[#f45300] font-semibold">
+              ONE OPERATOR
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f45300]" />
+          </div>
+
+          {/* Main Giant Headline */}
+          <h1 className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tight text-white leading-[0.94] uppercase mb-8">
+            Every leg <br />
+            of the journey
+          </h1>
+
+          {/* Subtext */}
+          <p className="max-w-xl text-base sm:text-lg text-white/75 font-normal leading-relaxed mb-10">
+            Freight forwarding, land transport, and customs brokerage, unified across APAC under one accountable team.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-4">
+            <a
+              href="#contact"
+              className="px-8 py-3.5 rounded-full bg-white text-black font-heading font-medium text-sm tracking-tight transition-all duration-300 hover:bg-[#f45300] hover:text-white hover:shadow-[0_0_25px_rgba(244,83,0,0.4)] active:scale-95 flex items-center gap-2"
+            >
+              <span>Talk with us</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </a>
+            <a
+              href="#services"
+              className="px-8 py-3.5 rounded-full border border-white/25 text-white font-heading font-medium text-sm tracking-tight transition-all duration-300 hover:bg-white/10 hover:border-white/50 active:scale-95"
+            >
+              Our services
+            </a>
+          </div>
+
+          {/* Scroll Cue */}
+          <div className="flex items-center gap-3 mt-16 text-white/40">
+            <div className="w-7 h-7 rounded-full border border-white/20 flex items-center justify-center animate-bounce">
+              <ArrowDown className="w-3.5 h-3.5 text-[#f45300]" />
+            </div>
+            <span className="font-mono text-[11px] uppercase tracking-widest">
+              Scroll to explore freight network
+            </span>
+          </div>
+
         </div>
 
-        {/* Main Hero Headline */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.08] font-sans">
-          Autonomous Planetary{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 glow-text-cyan">
-            Intelligence.
-          </span>
-        </h1>
-
-        {/* Supporting Copy */}
-        <p className="max-w-2xl text-base sm:text-lg md:text-xl text-slate-300/80 font-light leading-relaxed">
-          Real-time orbital tracking, multi-continental logistics vectors, and high-frequency planetary telemetry visualized across an interactive 3D canvas.
-        </p>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
-          <a
-            href="#network"
-            className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-cyan-400 text-black font-bold text-sm tracking-tight transition-all duration-300 hover:bg-white hover:shadow-[0_0_35px_rgba(56,189,248,0.7)] active:scale-95 flex items-center justify-center gap-2"
-          >
-            <Compass className="w-4 h-4" />
-            <span>Explore Planetary Grid</span>
-          </a>
-          <a
-            href="#command"
-            className="w-full sm:w-auto px-7 py-3.5 rounded-full glass-panel border border-white/10 text-white font-semibold text-sm tracking-tight transition-all duration-300 hover:bg-white/10 active:scale-95 flex items-center justify-center gap-2"
-          >
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <span>Open Telemetry HUD</span>
-          </a>
-        </div>
-
-        {/* Telemetry Stat Pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl mt-10">
-          <div className="glass-panel p-3.5 rounded-2xl flex flex-col items-center">
-            <span className="text-xl font-bold font-mono text-cyan-400">8</span>
-            <span className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Orbital Hubs</span>
+        {/* Right Column: Framed 3D Globe with dual rim halo */}
+        <div className="lg:col-span-5 relative flex items-center justify-center">
+          
+          {/* Framed Atmosphere Halos */}
+          <div className="relative w-[340px] h-[340px] sm:w-[460px] sm:h-[460px] md:w-[520px] md:h-[520px] flex items-center justify-center pointer-events-none">
+            {/* Top-Right Fiery Orange Atmospheric Rim */}
+            <div className="home-hero-globe-shadow orange-plus" />
+            
+            {/* Bottom Atmospheric Deep Blue Rim */}
+            <div className="home-hero-globe-shadow blue-plus" />
           </div>
-          <div className="glass-panel p-3.5 rounded-2xl flex flex-col items-center">
-            <span className="text-xl font-bold font-mono text-emerald-400">14 ms</span>
-            <span className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Mean Ping</span>
-          </div>
-          <div className="glass-panel p-3.5 rounded-2xl flex flex-col items-center">
-            <span className="text-xl font-bold font-mono text-cyan-400">4.8 Tbps</span>
-            <span className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Throughput</span>
-          </div>
-          <div className="glass-panel p-3.5 rounded-2xl flex flex-col items-center">
-            <span className="text-xl font-bold font-mono text-emerald-400">99.98%</span>
-            <span className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Coverage</span>
-          </div>
-        </div>
 
-        {/* Scroll Cue */}
-        <div className="flex flex-col items-center gap-2 mt-8 animate-bounce text-slate-500">
-          <span className="font-mono text-[10px] uppercase tracking-[0.25em]">Scroll to Orbit</span>
-          <ArrowDown className="w-4 h-4 text-cyan-400" />
+          {/* Interactive Globe Widgets (Speed slider & Label toggle matching United Carriers) */}
+          <div className="absolute right-0 bottom-4 pointer-events-auto flex flex-col items-center gap-3 z-20">
+            
+            {/* Speed Control Slider */}
+            <div className="p-3 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 flex flex-col items-center gap-2 text-white">
+              <RotateCw className="w-3.5 h-3.5 text-[#f45300]" />
+              <input
+                type="range"
+                min="0.2"
+                max="3.0"
+                step="0.1"
+                value={speed}
+                onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                className="w-16 h-1 accent-[#f45300] cursor-pointer rotate-[-90deg] my-6"
+                aria-label="Globe rotation speed"
+              />
+              <span className="font-mono text-[10px] text-white/80">
+                {speed.toFixed(1)}×
+              </span>
+            </div>
+
+            {/* Label Toggle Button */}
+            <button
+              onClick={() => setShowLabels(!showLabels)}
+              className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:border-white/30 transition-all"
+              aria-label="Toggle Globe Port Labels"
+            >
+              {showLabels ? <Eye className="w-4 h-4 text-[#f45300]" /> : <EyeOff className="w-4 h-4 text-white/50" />}
+            </button>
+          </div>
+
         </div>
 
       </div>

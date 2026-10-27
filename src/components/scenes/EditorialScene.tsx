@@ -1,69 +1,95 @@
 'use client';
 
-import React from 'react';
-import { Cpu, Server, Zap, Globe2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 
 export const EditorialScene: React.FC = () => {
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = document.getElementById('about');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.75) {
+        setInView(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <section
-      id="vision"
-      className="relative min-h-screen flex flex-col justify-center px-4 md:px-12 py-24 max-w-6xl mx-auto"
+      id="about"
+      className="relative z-10 w-full bg-[#f4f5f8] text-[#0c1017] transition-colors duration-700 py-28 md:py-36 px-6 sm:px-12 lg:px-20"
     >
-      <div className="flex flex-col gap-8 md:gap-12">
-        {/* Section Identifier */}
-        <div className="flex items-center gap-3">
-          <span className="w-8 h-[1px] bg-cyan-400" />
-          <span className="font-mono text-xs text-cyan-400 uppercase tracking-[0.25em]">
-            02 // EDITORIAL VISION
-          </span>
-        </div>
-
-        {/* Big Editorial Statement */}
+      <div className="max-w-7xl mx-auto flex flex-col gap-16 md:gap-24">
+        
+        {/* Top Editorial Statement */}
         <div className="max-w-4xl">
-          <h2 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-[1.12] tracking-tight">
-            The world does not sleep.{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-emerald-400">
-              It computes.
-            </span>
+          <h2 className="font-heading text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[#0c1017] leading-[1.02] uppercase mb-8">
+            We move freight. <br />
+            We own the outcome.
           </h2>
 
-          <p className="mt-8 text-lg sm:text-xl md:text-2xl text-slate-300/80 font-light leading-relaxed max-w-3xl">
-            Over 120,000 planetary vectors traversing the stratosphere at the speed of light. We link semiconductor fabrication lines, quantum cloud datacenters, and automated cargo vessels into a single, synchronized telemetry pulse.
+          <p className="text-lg sm:text-xl md:text-2xl text-[#4a5568] font-normal leading-relaxed max-w-3xl mb-8">
+            With every service under one roof and one accountable team, your supply chain moves the way your business demands: predictably, transparently, and without excuses. That means no finger-pointing between vendors. No delays lost in handoffs. Just one team, accountable from origin to destination.
           </p>
+
+          <a
+            href="#why-us"
+            className="inline-flex items-center gap-2 font-heading font-medium text-base text-[#0c1017] hover:text-[#f45300] transition-colors group"
+          >
+            <span>Learn more about us</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1 text-[#f45300]" />
+          </a>
         </div>
 
-        {/* Feature telemetry cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-6">
-          <div className="glass-panel p-6 rounded-2xl flex flex-col gap-3 group hover:border-cyan-400/40 transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center text-cyan-400">
-              <Globe2 className="w-5 h-5" />
-            </div>
-            <h3 className="text-white font-bold text-lg tracking-tight">Spherical Topology</h3>
-            <p className="text-sm text-slate-400 leading-relaxed font-light">
-              Full 360-degree real-time geodesic routing avoiding ionospheric interference and geo-fenced bottlenecks.
-            </p>
-          </div>
+        {/* Section Transition Header */}
+        <div className="pt-12 border-t border-black/10">
+          <p className="font-heading text-xs uppercase tracking-[0.2em] text-[#718096] mb-12">
+            From countless journeys, clarity emerges
+          </p>
 
-          <div className="glass-panel p-6 rounded-2xl flex flex-col gap-3 group hover:border-emerald-400/40 transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
-              <Zap className="w-5 h-5" />
+          {/* Three Live Stats Counters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+            
+            {/* Stat 1 */}
+            <div className="flex flex-col border-l-2 border-black/10 pl-6 py-2">
+              <span className="font-heading text-6xl sm:text-7xl font-bold text-[#0c1017] tracking-tight">
+                2,500 <span className="text-[#f45300]">+</span>
+              </span>
+              <span className="font-heading text-sm uppercase tracking-wider text-[#718096] mt-3">
+                Shipments per month
+              </span>
             </div>
-            <h3 className="text-white font-bold text-lg tracking-tight">Zero-Jitter Optical Sync</h3>
-            <p className="text-sm text-slate-400 leading-relaxed font-light">
-              Sub-millisecond inter-satellite laser links transferring petabytes across continental divides effortlessly.
-            </p>
-          </div>
 
-          <div className="glass-panel p-6 rounded-2xl flex flex-col gap-3 group hover:border-blue-400/40 transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-400/30 flex items-center justify-center text-blue-400">
-              <Cpu className="w-5 h-5" />
+            {/* Stat 2 */}
+            <div className="flex flex-col border-l-2 border-black/10 pl-6 py-2">
+              <span className="font-heading text-6xl sm:text-7xl font-bold text-[#0c1017] tracking-tight">
+                98.2 <span className="text-[#f45300]">%</span>
+              </span>
+              <span className="font-heading text-sm uppercase tracking-wider text-[#718096] mt-3">
+                On-time delivery rate
+              </span>
             </div>
-            <h3 className="text-white font-bold text-lg tracking-tight">Autonomous Dispatch</h3>
-            <p className="text-sm text-slate-400 leading-relaxed font-light">
-              Self-healing routing algorithms dynamically re-routing air, sea, and fiber traffic around global storm corridors.
-            </p>
+
+            {/* Stat 3 */}
+            <div className="flex flex-col border-l-2 border-black/10 pl-6 py-2">
+              <span className="font-heading text-6xl sm:text-7xl font-bold text-[#0c1017] tracking-tight">
+                8 <span className="text-[#f45300]">+</span>
+              </span>
+              <span className="font-heading text-sm uppercase tracking-wider text-[#718096] mt-3">
+                Years in operation
+              </span>
+            </div>
+
           </div>
         </div>
+
       </div>
     </section>
   );

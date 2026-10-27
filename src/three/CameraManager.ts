@@ -2,49 +2,56 @@ import * as THREE from 'three';
 import { CameraKeyframe } from '@/types';
 
 export const CAMERA_KEYFRAMES: CameraKeyframe[] = [
-  // Sequence 01: Hero Scene (Slightly tilted high-tech perspective)
+  // Sequence 01: Hero Scene (Globe positioned right, framed with copy on left)
   {
     progress: 0.0,
-    position: [0, 0.4, 5.2],
+    position: [0.95, 0.0, 4.8],
+    target: [0.95, 0.0, 0],
+    fov: 44,
+  },
+  // Sequence 02: Transition to Editorial Scene (Globe scales down / recedes)
+  {
+    progress: 0.20,
+    position: [0.5, 0.2, 6.2],
+    target: [0.5, 0.0, 0],
+    fov: 46,
+  },
+  // Sequence 03: Crane & Logistics (WebGL canvas dims while DOM scene dominates)
+  {
+    progress: 0.45,
+    position: [0.0, 0.0, 8.0],
     target: [0, 0, 0],
-    fov: 45,
+    fov: 50,
   },
-  // Sequence 02: Editorial Statement (Camera orbits and pulls back slightly)
+  // Sequence 04: Truck & Roadway
   {
-    progress: 0.22,
-    position: [2.2, 1.2, 4.4],
+    progress: 0.70,
+    position: [0.0, 0.0, 8.5],
     target: [0, 0, 0],
-    fov: 42,
+    fov: 50,
   },
-  // Sequence 03: Global Logistics Network (Close-up zoom on northern hemisphere hubs)
+  // Sequence 05: Ocean Scene & Ship
   {
-    progress: 0.48,
-    position: [1.1, 1.8, 3.1],
-    target: [0.3, 0.5, 0],
-    fov: 38,
+    progress: 0.85,
+    position: [0.0, 0.0, 9.0],
+    target: [0, 0, 0],
+    fov: 52,
   },
-  // Sequence 04: Command Matrix HUD (Top-angled tactical telemetry view)
-  {
-    progress: 0.74,
-    position: [0.0, 3.4, 3.2],
-    target: [0, 0.2, 0],
-    fov: 40,
-  },
-  // Sequence 05: Climax & CTA (Hyper-drive pull-back through satellite ring)
+  // Sequence 06: Testimonials & FAQ Climax
   {
     progress: 1.0,
-    position: [0, 0.8, 6.2],
+    position: [0.0, 0.0, 9.5],
     target: [0, 0, 0],
-    fov: 48,
+    fov: 52,
   },
 ];
 
 export class CameraManager {
   private camera: THREE.PerspectiveCamera;
-  private currentPos: THREE.Vector3 = new THREE.Vector3(0, 0.4, 5.2);
-  private currentTarget: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
-  private targetPos: THREE.Vector3 = new THREE.Vector3(0, 0.4, 5.2);
-  private lookAtTarget: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  private currentPos: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 4.8);
+  private currentTarget: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 0);
+  private targetPos: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 4.8);
+  private lookAtTarget: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 0);
   private mouseOffset: THREE.Vector2 = new THREE.Vector2(0, 0);
 
   constructor(camera: THREE.PerspectiveCamera) {
@@ -54,12 +61,10 @@ export class CameraManager {
   }
 
   public setMouseParallax(normalizedX: number, normalizedY: number) {
-    // Parallax damping
-    this.mouseOffset.set(normalizedX * 0.4, -normalizedY * 0.3);
+    this.mouseOffset.set(normalizedX * 0.25, -normalizedY * 0.2);
   }
 
   public update(progress: number, delta: number) {
-    // Determine keyframe interpolation interval
     const clampedProgress = Math.max(0, Math.min(1, progress));
     let startFrame = CAMERA_KEYFRAMES[0];
     let endFrame = CAMERA_KEYFRAMES[CAMERA_KEYFRAMES.length - 1];
@@ -77,10 +82,8 @@ export class CameraManager {
 
     const range = endFrame.progress - startFrame.progress;
     const localT = range > 0 ? (clampedProgress - startFrame.progress) / range : 0;
-    // Cubic smoothstep easing
     const smoothT = localT * localT * (3 - 2 * localT);
 
-    // Interpolate target position
     this.targetPos.set(
       THREE.MathUtils.lerp(startFrame.position[0], endFrame.position[0], smoothT),
       THREE.MathUtils.lerp(startFrame.position[1], endFrame.position[1], smoothT),
@@ -97,7 +100,6 @@ export class CameraManager {
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFov, delta * 4);
     this.camera.updateProjectionMatrix();
 
-    // Smooth lerp to camera position with mouse parallax added
     const lerpFactor = Math.min(1, delta * 3.5);
     this.currentPos.x = THREE.MathUtils.lerp(
       this.currentPos.x,

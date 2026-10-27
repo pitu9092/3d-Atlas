@@ -1,42 +1,26 @@
 import type { Metadata } from 'next';
-import { Inter, Syne, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const syne = Syne({
-  variable: '--font-syne',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
-  title: '3D ATLAS — Autonomous Planetary Intelligence & Logistics Experience',
+  title: 'United Carriers — One operator. Every leg of the journey.',
   description:
-    'A cinematic, scroll-driven WebGL command center and global planetary telemetry experience inspired by Awwwards benchmarks and Stonic AI.',
+    'Freight forwarding, land transport, and customs brokerage, unified across APAC under one accountable team. End-to-end supply chain predictability and transparency.',
   keywords: [
-    '3D Atlas',
-    'WebGL',
-    'Three.js',
-    'GSAP',
-    'Planetary Intelligence',
-    'Logistics Telemetry',
-    'Interactive Globe',
+    'United Carriers',
+    'Freight Forwarding',
+    'Customs Brokerage',
+    'Air Freight',
+    'Ocean Freight',
+    'Warehousing 3PL',
+    'Project Cargo',
+    'Interstate Transport',
+    'APAC Logistics',
   ],
-  authors: [{ name: '3D Atlas Creative Lab' }],
+  authors: [{ name: 'United Carriers Group Pty Ltd' }],
   openGraph: {
-    title: '3D ATLAS — Autonomous Planetary Intelligence',
-    description: 'Cinematic 3D scroll-driven planetary telemetry experience.',
+    title: 'United Carriers — One operator. Every leg of the journey.',
+    description:
+      'Freight forwarding, land transport, and customs brokerage, unified across APAC under one accountable team.',
     type: 'website',
   },
 };
@@ -47,12 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${syne.variable} ${jetbrainsMono.variable} dark`}
-      style={{ colorScheme: 'dark' }}
-    >
-      <body className="bg-black text-slate-100 font-sans min-h-screen selection:bg-cyan-500 selection:text-black antialiased relative">
+    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
+      <body className="bg-black text-white antialiased relative min-h-screen">
         {children}
       </body>
     </html>
