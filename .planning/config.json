@@ -1,0 +1,10 @@
+{
+  "depth": "comprehensive",
+  "commit_docs": true,
+  "workflow": {
+    "research": true,
+    "verification": true,
+    "anti_hallucination": true,
+    "pixel_perfection": true
+  }
+}
