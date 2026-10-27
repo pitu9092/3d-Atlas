@@ -28,7 +28,9 @@ export const ScrollTrack: React.FC<ScrollTrackProps> = ({ progress }) => {
   return (
     <aside
       aria-label="Scroll Progression Track"
-      className="fixed right-6 md:right-8 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-4 pointer-events-none select-none font-mono"
+      className={`fixed right-6 md:right-8 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-4 pointer-events-none select-none font-mono transition-opacity duration-500 ${
+        progress < 0.05 ? 'opacity-0' : 'opacity-100'
+      }`}
     >
       {/* Chapter Indicator Label */}
       <div className="flex flex-col items-end text-right pr-2">

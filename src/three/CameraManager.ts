@@ -5,15 +5,15 @@ export const CAMERA_KEYFRAMES: CameraKeyframe[] = [
   // Sequence 01: Hero Scene (Globe positioned right, framed with copy on left)
   {
     progress: 0.0,
-    position: [0.95, 0.0, 4.8],
-    target: [0.95, 0.0, 0],
-    fov: 44,
+    position: [0.0, 0.0, 4.8],
+    target: [0.0, 0.0, 0],
+    fov: 45,
   },
   // Sequence 02: Transition to Editorial Scene (Globe scales down / recedes)
   {
     progress: 0.20,
-    position: [0.5, 0.2, 6.2],
-    target: [0.5, 0.0, 0],
+    position: [0.2, 0.1, 6.2],
+    target: [0.2, 0.0, 0],
     fov: 46,
   },
   // Sequence 03: Crane & Logistics (WebGL canvas dims while DOM scene dominates)
@@ -48,10 +48,10 @@ export const CAMERA_KEYFRAMES: CameraKeyframe[] = [
 
 export class CameraManager {
   private camera: THREE.PerspectiveCamera;
-  private currentPos: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 4.8);
-  private currentTarget: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 0);
-  private targetPos: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 4.8);
-  private lookAtTarget: THREE.Vector3 = new THREE.Vector3(0.95, 0.0, 0);
+  private currentPos: THREE.Vector3 = new THREE.Vector3(0.0, 0.0, 4.8);
+  private currentTarget: THREE.Vector3 = new THREE.Vector3(0.0, 0.0, 0);
+  private targetPos: THREE.Vector3 = new THREE.Vector3(0.0, 0.0, 4.8);
+  private lookAtTarget: THREE.Vector3 = new THREE.Vector3(0.0, 0.0, 0);
   private mouseOffset: THREE.Vector2 = new THREE.Vector2(0, 0);
 
   constructor(camera: THREE.PerspectiveCamera) {
